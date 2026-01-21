@@ -1,11 +1,42 @@
 import React, { useState } from 'react';
-import { Sun, Battery, DollarSign, Menu, X, CheckCircle, ArrowRight, Phone, Zap, ShieldCheck, Leaf } from 'lucide-react';
+import { Sun, Battery, DollarSign, Menu, X, CheckCircle, ArrowRight, Phone, Zap, ShieldCheck, Leaf, Lock } from 'lucide-react';
+import Dashboard from './Dashboard';
+import AdminLogin from './AdminLogin';
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'login' | 'dashboard'
   const COMPANY_NAME = "ArSol";
 
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    amount: ''
+  });
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Reemplaza este número con el teléfono real de la empresa (código país + área + número)
+    const phoneNumber = "554896539440"; 
+    const message = `¡Hola! Me gustaría solicitar un presupuesto gratuito.\n\n*Nombre:* ${formData.name}\n*Email:* ${formData.email}\n*Factura Mensual:* ${formData.amount}`;
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  if (currentView === 'login') {
+    return <AdminLogin onLogin={() => setCurrentView('dashboard')} onBack={() => setCurrentView('landing')} />;
+  }
+
+  if (currentView === 'dashboard') {
+    return <Dashboard onLogout={() => setCurrentView('landing')} />;
+  }
 
   return (
     <div className="min-h-screen bg-white text-gray-800 font-sans selection:bg-primary selection:text-white">
@@ -29,8 +60,11 @@ const App = () => {
               <a href="#beneficios" className="text-gray-600 hover:text-primary transition-colors">Beneficios</a>
               <a href="#servicios" className="text-gray-600 hover:text-primary transition-colors">Servicios</a>
               <a href="#contacto" className="bg-gray-900 text-white px-6 py-2.5 rounded-full hover:bg-primary transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center gap-2">
-                <Zap className="w-4 h-4 fill-current" /> Cotizar
+                <Zap className="w-4 h-4 fill-current" /> Presupuesto
               </a>
+              <button onClick={() => setCurrentView('login')} className="text-gray-400 hover:text-gray-900 transition-colors" title="Acceso Admin">
+                <Lock className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -49,7 +83,8 @@ const App = () => {
               <a href="#inicio" onClick={toggleMenu} className="block px-4 py-3 hover:bg-gray-50 rounded-lg font-medium text-gray-700">Inicio</a>
               <a href="#beneficios" onClick={toggleMenu} className="block px-4 py-3 hover:bg-gray-50 rounded-lg font-medium text-gray-700">Beneficios</a>
               <a href="#servicios" onClick={toggleMenu} className="block px-4 py-3 hover:bg-gray-50 rounded-lg font-medium text-gray-700">Servicios</a>
-              <a href="#contacto" onClick={toggleMenu} className="block px-4 py-3 text-primary font-bold bg-yellow-50/50 rounded-lg mt-2">Solicitar Cotización</a>
+              <a href="#contacto" onClick={toggleMenu} className="block px-4 py-3 text-primary font-bold bg-yellow-50/50 rounded-lg mt-2">Solicitar Presupuesto</a>
+              <button onClick={() => { toggleMenu(); setCurrentView('login'); }} className="block w-full text-left px-4 py-3 hover:bg-gray-50 rounded-lg font-medium text-gray-700">Acceso Admin</button>
             </div>
           </div>
         )}
@@ -69,11 +104,11 @@ const App = () => {
             <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 leading-[1.1] mb-6 tracking-tight">
               Energía limpia, <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-600">
-                ahorro real.
+                economía real.
               </span>
             </h1>
             <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed">
-              Transforma tu hogar o negocio con <strong>{COMPANY_NAME}</strong>. Reduce tu factura de luz hasta un 98% y asegura tu futuro energético.
+              Transforma tu hogar o empresa con <strong>{COMPANY_NAME}</strong>. Reduce tu factura de luz hasta un 98% y asegura tu futuro energético.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               <a href="#contacto" className="bg-primary text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-yellow-600 transition-all shadow-xl hover:shadow-primary/40 flex items-center justify-center gap-2 group">
@@ -109,7 +144,7 @@ const App = () => {
                     <DollarSign className="h-6 w-6" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-lg">-98% en tu recibo</p>
+                    <p className="font-bold text-gray-900 text-lg">-98% en tu factura</p>
                     <p className="text-xs text-gray-500 font-medium">Promedio de nuestros clientes</p>
                   </div>
                 </div>
@@ -129,7 +164,7 @@ const App = () => {
             <h2 className="text-primary font-bold tracking-wider uppercase text-sm mb-3">¿Por qué ArSol?</h2>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Inversión inteligente</h2>
             <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-              Diseñamos sistemas fotovoltaicos que maximizan la captación de energía y minimizan el tiempo de retorno de inversión.
+              Diseñamos sistemas fotovoltaicos que maximizan la captación de energía y minimizan el tiempo de retorno de la inversión.
             </p>
           </div>
 
@@ -139,19 +174,19 @@ const App = () => {
                 icon: <DollarSign className="h-8 w-8 text-green-600" />,
                 bg: "bg-green-50",
                 title: "Ahorro Inmediato",
-                desc: "Congela el precio de tu energía. Deja de sufrir por los aumentos de tarifas y empieza a ahorrar desde el primer mes."
+                desc: "Congela el precio de tu energía. Deja de sufrir con el aumento de las tarifas y comienza a ahorrar desde el primer mes."
               },
               {
                 icon: <Sun className="h-8 w-8 text-primary" />,
                 bg: "bg-yellow-50",
                 title: "Energía Infinita",
-                desc: "Aprovecha el recurso más abundante de México. Nuestros paneles de alta eficiencia funcionan incluso en días nublados."
+                desc: "Aprovecha el recurso más abundante. Nuestros paneles de alta eficiencia funcionan incluso en días nublados."
               },
               {
                 icon: <ShieldCheck className="h-8 w-8 text-blue-600" />,
                 bg: "bg-blue-50",
                 title: "Garantía de 25 Años",
-                desc: "Tu inversión está protegida. Ofrecemos garantías líderes en la industria tanto en producto como en generación."
+                desc: "Tu inversión está protegida. Ofrecemos garantías líderes en el sector, tanto en producto como en generación."
               }
             ].map((feature, index) => (
               <div key={index} className="group p-8 rounded-3xl bg-white border border-gray-100 hover:border-primary/30 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
@@ -180,7 +215,7 @@ const App = () => {
               </div>
               <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">Da el paso hacia la <br/><span className="text-primary">independencia energética</span></h2>
               <p className="text-gray-400 mb-10 text-lg leading-relaxed">
-                Déjanos tus datos. Un ingeniero experto de <strong>{COMPANY_NAME}</strong> analizará tu consumo y te enviará una propuesta personalizada sin compromiso.
+                Deja tus datos. Un ingeniero especialista de <strong>{COMPANY_NAME}</strong> analizará tu consumo y enviará una propuesta personalizada sin compromiso.
               </p>
               
               <div className="space-y-6">
@@ -189,8 +224,8 @@ const App = () => {
                     <Phone className="text-primary h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Llámanos ahora</p>
-                    <p className="font-bold text-xl">+52 (55) 1234 5678</p>
+                    <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Llama ahora</p>
+                    <p className="font-bold text-xl">+55 (48) 9653-9440</p>
                   </div>
                 </div>
                 
@@ -199,7 +234,7 @@ const App = () => {
                     <CheckCircle className="text-green-500 h-6 w-6" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Certificaciones</p>
+                    <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Certificações</p>
                     <p className="font-bold text-xl">FIDE & ANCE</p>
                   </div>
                 </div>
@@ -207,27 +242,49 @@ const App = () => {
             </div>
 
             <div className="bg-white text-gray-800 p-8 md:p-10 rounded-3xl shadow-2xl">
-              <h3 className="text-2xl font-bold mb-2 text-gray-900">Solicitar Cotización</h3>
-              <p className="text-gray-500 mb-8 text-sm">Completa el formulario y recibe tu estudio en 24h.</p>
+              <h3 className="text-2xl font-bold mb-2 text-gray-900">Solicitar Presupuesto</h3>
+              <p className="text-gray-500 mb-8 text-sm">Rellena el formulario y recibe tu estudio en 24h.</p>
               
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+              <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre Completo</label>
-                  <input type="text" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Ej. Juan Pérez" />
+                  <input 
+                    type="text" 
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                    placeholder="Ex: João Silva" 
+                    required
+                  />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Correo Electrónico</label>
-                  <input type="email" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="juan@empresa.com" />
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">E-mail</label>
+                  <input 
+                    type="email" 
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                    placeholder="joao@empresa.com" 
+                    required
+                  />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Monto aproximado de tu recibo ($)</label>
-                  <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Valor aproximado de tu factura ($)</label>
+                  <select 
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                    required
+                  >
                     <option value="">Selecciona una opción</option>
-                    <option value="1">$1,000 - $2,500</option>
-                    <option value="2">$2,500 - $5,000</option>
-                    <option value="3">Más de $5,000</option>
+                    <option value="$ 1.000 - $ 2.500">$ 1.000 - $ 2.500</option>
+                    <option value="$ 2.500 - $ 5.000">$ 2.500 - $ 5.000</option>
+                    <option value="Más de $ 5.000">Más de $ 5.000</option>
                   </select>
                 </div>
 
