@@ -1,7 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, TrendingUp, Bell, Leaf, DollarSign, Calendar } from 'lucide-react';
 
 const Dashboard = ({ onLogout }) => {
+  const [stats, setStats] = useState({
+    energy: { value: "...", trend: "...", trendUp: true },
+    co2: { value: "...", trend: "...", trendUp: true },
+    income: { value: "...", trend: "...", trendUp: true }
+  });
+  const [activities, setActivities] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/dashboard')
+      .then(res => res.json())
+      .then(data => {
+        if (data.stats) setStats(data.stats);
+        if (data.activities) setActivities(data.activities);
+      })
+      .catch(err => console.error("Error cargando dashboard:", err));
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
       {/* Sidebar */}
@@ -59,25 +76,25 @@ const Dashboard = ({ onLogout }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <StatCard 
               title="Energía Generada" 
-              value="1,234 MWh" 
-              trend="+12% vs mes anterior" 
-              trendUp={true}
+              value={stats.energy.value} 
+              trend={stats.energy.trend} 
+              trendUp={stats.energy.trendUp}
               icon={<Zap className="text-yellow-600 h-6 w-6" />} 
               bg="bg-yellow-50"
             />
             <StatCard 
               title="CO2 Evitado" 
-              value="850 Ton" 
-              trend="+5% vs mes anterior" 
-              trendUp={true}
+              value={stats.co2.value} 
+              trend={stats.co2.trend} 
+              trendUp={stats.co2.trendUp}
               icon={<Leaf className="text-green-600 h-6 w-6" />} 
               bg="bg-green-50"
             />
             <StatCard 
               title="Ingresos Mensuales" 
-              value="$ 45,200" 
-              trend="-2% vs mes anterior" 
-              trendUp={false}
+              value={stats.income.value} 
+              trend={stats.income.trend} 
+              trendUp={stats.income.trendUp}
               icon={<DollarSign className="text-blue-600 h-6 w-6" />} 
               bg="bg-blue-50"
             />
@@ -101,10 +118,18 @@ const Dashboard = ({ onLogout }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  <TableRow name="Juan Pérez" email="juan@gmail.com" status="Pendiente" date="21 Ene 2026" amount="$ 3,500" />
-                  <TableRow name="Tech Solutions SA" email="contacto@techsol.com" status="Completado" date="20 Ene 2026" amount="$ 12,000" />
-                  <TableRow name="Maria Garcia" email="mgarcia@outlook.com" status="En Proceso" date="19 Ene 2026" amount="$ 4,200" />
-                  <TableRow name="Hotel Sol y Mar" email="admin@solymar.com" status="Pendiente" date="18 Ene 2026" amount="$ 25,000" />
+                  {activities.length > 0 ? activities.map((activity) => (
+                    <TableRow 
+                      key={activity.id}
+                      name={activity.name} 
+                      email={activity.email} 
+                      status={activity.status} 
+                      date={activity.date} 
+                      amount={activity.amount} 
+                    />
+                  )) : (
+                    <tr><td colSpan="5" className="p-4 text-center text-gray-500">Cargando datos...</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>

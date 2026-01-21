@@ -5,16 +5,31 @@ const AdminLogin = ({ onLogin, onBack }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulación de autenticación (Hardcoded para demostración)
-    // Usuario: admin@arsol.com
-    // Pass: admin123
-    if (email === 'admin@arsol.com' && password === 'admin123') {
-      onLogin();
-    } else {
-      setError('Credenciales incorrectas');
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        onLogin();
+      } else {
+        setError(data.message || 'Credenciales incorrectas');
+      }
+    } catch (err) {
+      setError('Error de conexión con el servidor');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -70,9 +85,10 @@ const AdminLogin = ({ onLogin, onBack }) => {
 
           <button
             type="submit"
-            className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-primary transition-colors shadow-lg transform active:scale-95 duration-200"
+            disabled={isLoading}
+            className={`w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-primary transition-colors shadow-lg transform active:scale-95 duration-200 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            Ingresar al Panel
+            {isLoading ? 'Verificando...' : 'Ingresar al Panel'}
           </button>
         </form>
       </div>
