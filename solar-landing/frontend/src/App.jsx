@@ -6,17 +6,30 @@ import AppointmentForm from './AppointmentForm';
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'login' | 'dashboard'
+  // Inicializar estado verificando localStorage para persistir la sesión
+  const [currentView, setCurrentView] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true' ? 'dashboard' : 'landing';
+  });
   const COMPANY_NAME = "ArSol";
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+  const handleLogin = () => {
+    localStorage.setItem('isAuthenticated', 'true');
+    setCurrentView('dashboard');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    setCurrentView('landing');
+  };
+
   if (currentView === 'login') {
-    return <AdminLogin onLogin={() => setCurrentView('dashboard')} onBack={() => setCurrentView('landing')} />;
+    return <AdminLogin onLogin={handleLogin} onBack={() => setCurrentView('landing')} />;
   }
 
   if (currentView === 'dashboard') {
-    return <Dashboard onLogout={() => setCurrentView('landing')} />;
+    return <Dashboard onLogout={handleLogout} />;
   }
 
   return (

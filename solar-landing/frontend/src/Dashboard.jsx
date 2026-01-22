@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, TrendingUp, Bell, Leaf, DollarSign, Calendar, Trash2, Plus, X, Edit, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, TrendingUp, Bell, Leaf, DollarSign, Calendar, Trash2, Plus, X, Edit, Clock, Search } from 'lucide-react';
 
 const Dashboard = ({ onLogout }) => {
   const [stats, setStats] = useState({
@@ -12,6 +12,7 @@ const Dashboard = ({ onLogout }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [activeTab, setActiveTab] = useState('resumen');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loadDashboardData = async () => {
     try {
@@ -234,6 +235,68 @@ const Dashboard = ({ onLogout }) => {
                         <td className="px-8 py-4"><span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">{appt.status}</span></td>
                       </tr>
                     )) : <tr><td colSpan="5" className="p-8 text-center text-gray-500">No hay citas programadas.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* VISTA: CLIENTES (Directorio con Buscador) */}
+          {activeTab === 'clientes' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Directorio de Clientes</h3>
+                  <p className="text-gray-500 text-sm">Gestiona y busca en tu base de datos de clientes.</p>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input 
+                    type="text" 
+                    placeholder="Buscar por nombre o email..." 
+                    className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none w-full sm:w-64 transition-all"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm text-gray-600">
+                  <thead className="bg-gray-50/50 text-gray-900 font-semibold border-b border-gray-100">
+                    <tr>
+                      <th className="px-8 py-4">Cliente</th>
+                      <th className="px-8 py-4">Estado</th>
+                      <th className="px-8 py-4">Fecha</th>
+                      <th className="px-8 py-4">Presupuesto</th>
+                      <th className="px-8 py-4">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {activities.filter(client => 
+                      client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                      client.email.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length > 0 ? (
+                      activities.filter(client => 
+                        client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        client.email.toLowerCase().includes(searchTerm.toLowerCase())
+                      ).map((activity) => (
+                        <TableRow 
+                          key={activity.id}
+                          name={activity.name} 
+                          email={activity.email} 
+                          status={activity.status} 
+                          date={activity.date} 
+                          amount={activity.amount}
+                          onDelete={() => handleDelete(activity.id)}
+                          onEdit={() => {
+                            setEditingClient(activity);
+                            setIsModalOpen(true);
+                          }}
+                        />
+                      ))
+                    ) : (
+                      <tr><td colSpan="5" className="p-8 text-center text-gray-500">No se encontraron clientes que coincidan con tu búsqueda.</td></tr>
+                    )}
                   </tbody>
                 </table>
               </div>
