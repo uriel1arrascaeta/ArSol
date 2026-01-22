@@ -235,6 +235,28 @@ def create_appointment():
     db.session.commit()
     return jsonify({"success": True, "message": "Cita agendada exitosamente"}), 201
 
+# --- Ruta de Configuración ---
+
+
+@app.route('/api/user/password', methods=['PUT'])
+def update_password():
+    data = request.json
+    email = data.get('email')  # Asumimos que el email del admin es conocido
+    current_password = data.get('currentPassword')
+    new_password = data.get('newPassword')
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+
+    if user.password != current_password:
+        return jsonify({"success": False, "message": "La contraseña actual es incorrecta"}), 400
+
+    user.password = new_password
+    db.session.commit()
+    return jsonify({"success": True, "message": "Contraseña actualizada con éxito"}), 200
+
 
 if __name__ == '__main__':
     init_db()
