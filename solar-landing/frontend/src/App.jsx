@@ -2,33 +2,14 @@ import React, { useState } from 'react';
 import { Sun, Battery, DollarSign, Menu, X, CheckCircle, ArrowRight, Phone, Zap, ShieldCheck, Leaf, Lock } from 'lucide-react';
 import Dashboard from './Dashboard';
 import AdminLogin from './AdminLogin';
+import AppointmentForm from './AppointmentForm';
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'login' | 'dashboard'
   const COMPANY_NAME = "ArSol";
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    amount: ''
-  });
-
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Reemplaza este número con el teléfono real de la empresa (código país + área + número)
-    const phoneNumber = "554896539440"; 
-    const message = `¡Hola! Me gustaría solicitar un presupuesto gratuito.\n\n*Nombre:* ${formData.name}\n*Email:* ${formData.email}\n*Factura Mensual:* ${formData.amount}`;
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
 
   if (currentView === 'login') {
     return <AdminLogin onLogin={() => setCurrentView('dashboard')} onBack={() => setCurrentView('landing')} />;
@@ -241,58 +222,7 @@ const App = () => {
               </div>
             </div>
 
-            <div className="bg-white text-gray-800 p-8 md:p-10 rounded-3xl shadow-2xl">
-              <h3 className="text-2xl font-bold mb-2 text-gray-900">Solicitar Presupuesto</h3>
-              <p className="text-gray-500 mb-8 text-sm">Rellena el formulario y recibe tu estudio en 24h.</p>
-              
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre Completo</label>
-                  <input 
-                    type="text" 
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
-                    placeholder="Ex: João Silva" 
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">E-mail</label>
-                  <input 
-                    type="email" 
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
-                    placeholder="joao@empresa.com" 
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Valor aproximado de tu factura ($)</label>
-                  <select 
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                    required
-                  >
-                    <option value="">Selecciona una opción</option>
-                    <option value="$ 1.000 - $ 2.500">$ 1.000 - $ 2.500</option>
-                    <option value="$ 2.500 - $ 5.000">$ 2.500 - $ 5.000</option>
-                    <option value="Más de $ 5.000">Más de $ 5.000</option>
-                  </select>
-                </div>
-
-                <button type="submit" className="w-full bg-primary text-white font-bold py-4 rounded-xl hover:bg-yellow-600 transition-all shadow-lg hover:shadow-primary/50 transform hover:-translate-y-1 mt-4">
-                  ¡Quiero mi estudio gratis!
-                </button>
-              </form>
-            </div>
+            <AppointmentForm />
           </div>
         </div>
       </section>
