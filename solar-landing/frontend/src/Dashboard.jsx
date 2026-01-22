@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, TrendingUp, Bell, Leaf, DollarSign, Calendar, Trash2, Plus, X, Edit, Clock, Search } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, TrendingUp, Bell, Leaf, DollarSign, Calendar, Trash2, Plus, X, Edit, Clock, Search, Wrench, CheckCircle } from 'lucide-react';
 
 const Dashboard = ({ onLogout }) => {
   const [stats, setStats] = useState({
@@ -299,6 +299,41 @@ const Dashboard = ({ onLogout }) => {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* VISTA: INSTALACIONES */}
+          {activeTab === 'instalaciones' && (
+            <div>
+              <div className="mb-8">
+                <h3 className="font-bold text-2xl text-gray-900">Estado de Instalaciones</h3>
+                <p className="text-gray-500 text-sm">Un vistazo a los proyectos activos y completados.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activities.filter(act => act.status === 'En Proceso' || act.status === 'Completado').length > 0 ? (
+                  activities
+                    .filter(act => act.status === 'En Proceso' || act.status === 'Completado')
+                    .map(installation => (
+                      <div key={installation.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <p className="font-bold text-lg text-gray-900">{installation.name}</p>
+                            <p className="text-sm text-gray-500">{installation.email}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold border ${installation.status === 'Completado' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
+                            {installation.status}
+                          </span>
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
+                          <span className="font-medium text-gray-600">Presupuesto: <span className="font-bold text-gray-900">{installation.amount}</span></span>
+                          <span className="text-gray-400">{installation.date}</span>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <p className="text-gray-500 col-span-full text-center p-8">No hay instalaciones en proceso o completadas.</p>
+                )}
               </div>
             </div>
           )}
