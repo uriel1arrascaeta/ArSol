@@ -235,6 +235,27 @@ def create_appointment():
     db.session.commit()
     return jsonify({"success": True, "message": "Cita agendada exitosamente"}), 201
 
+
+@app.route('/api/appointments/<int:id>', methods=['PUT'])
+def update_appointment(id):
+    appt = Appointment.query.get_or_404(id)
+    data = request.json
+    appt.name = data.get('name', appt.name)
+    appt.email = data.get('email', appt.email)
+    appt.date = data.get('date', appt.date)
+    appt.time = data.get('time', appt.time)
+    appt.status = data.get('status', appt.status)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Cita actualizada"}), 200
+
+
+@app.route('/api/appointments/<int:id>', methods=['DELETE'])
+def delete_appointment(id):
+    appt = Appointment.query.get_or_404(id)
+    db.session.delete(appt)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Cita eliminada"}), 200
+
 # --- Ruta de Configuración ---
 
 

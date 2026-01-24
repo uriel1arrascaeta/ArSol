@@ -10,6 +10,8 @@ const Dashboard = ({ onLogout }) => {
   const [activities, setActivities] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
   const [activeTab, setActiveTab] = useState('resumen');
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,6 +76,43 @@ const Dashboard = ({ onLogout }) => {
     } catch (error) {
       console.error("Error al guardar:", error);
       alert("No se pudo conectar con el servidor.");
+    }
+  };
+
+  const handleDeleteAppointment = async (id) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta cita?')) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/appointments/${id}`, { method: 'DELETE' });
+        if (response.ok) loadDashboardData();
+      } catch (error) {
+        console.error("Error al eliminar cita:", error);
+      }
+    }
+  };
+
+  const handleSaveAppointment = async (apptData) => {
+    const isEdit = apptData.id;
+    const method = isEdit ? 'PUT' : 'POST';
+    const url = isEdit 
+      ? `http://localhost:5000/api/appointments/${apptData.id}`
+      : 'http://localhost:5000/api/appointments';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apptData)
+      });
+      
+      if (response.ok) {
+        loadDashboardData();
+        setIsAppointmentModalOpen(false);
+        setEditingAppointment(null);
+      } else {
+        alert("Error al guardar la cita.");
+      }
+    } catch (error) {
+      console.error("Error al guardar cita:", error);
     }
   };
 
@@ -225,6 +264,7 @@ const Dashboard = ({ onLogout }) => {
                       <th className="px-8 py-4">Fecha</th>
                       <th className="px-8 py-4">Hora</th>
                       <th className="px-8 py-4">Estado</th>
+                      <th className="px-8 py-4">Acción</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -234,9 +274,21 @@ const Dashboard = ({ onLogout }) => {
                         <td className="px-8 py-4">{appt.email}</td>
                         <td className="px-8 py-4">{appt.date}</td>
                         <td className="px-8 py-4 font-medium flex items-center gap-2"><Clock size={16} className="text-gray-400"/> {appt.time}</td>
-                        <td className="px-8 py-4"><span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">{appt.status}</span></td>
+                        <td className="px-8 py-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${appt.status === 'Atendida' ? 'bg-green-100 text-green-700' : appt.status === 'Cancelada' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {appt.status}
+                          </span>
+                        </td>
+                        <td className="px-8 py-4 flex items-center gap-3">
+                          <button onClick={() => { setEditingAppointment(appt); setIsAppointmentModalOpen(true); }} className="text-gray-400 hover:text-blue-600 transition-colors" title="Editar">
+                            <Edit size={18} />
+                          </button>
+                          <button onClick={() => handleDeleteAppointment(appt.id)} className="text-gray-400 hover:text-red-600 transition-colors" title="Eliminar">
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
                       </tr>
-                    )) : <tr><td colSpan="5" className="p-8 text-center text-gray-500">No hay citas programadas.</td></tr>}
+                    )) : <tr><td colSpan="6" className="p-8 text-center text-gray-500">No hay citas programadas.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -378,6 +430,14 @@ const Dashboard = ({ onLogout }) => {
           onSave={handleSave}
           client={editingClient}
         />
+
+        {/* Modal de Editar Cita */}
+        <AppointmentModal 
+          isOpen={isAppointmentModalOpen} 
+          onClose={() => setIsAppointmentModalOpen(false)} 
+          onSave={handleSaveAppointment}
+          appointment={editingAppointment}
+        />
       </main>
     </div>
   );
@@ -505,6 +565,73 @@ const ClientModal = ({ isOpen, onClose, onSave, client }) => {
             </div>
           </div>
           <button type="submit" className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-primary transition-colors mt-4">Guardar</button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const AppointmentModal = ({ isOpen, onClose, onSave, appointment }) => {
+  const [formData, setFormData] = useState({
+    name: '', email: '', date: '', time: '', status: 'Pendiente'
+  });
+
+  useEffect(() => {
+    if (appointment) {
+      setFormData(appointment);
+    }
+  }, [appointment, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900">Editar Cita</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input required type="text" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input required type="email" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+              <input required type="date" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+                value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+              <input required type="time" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+                value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <select className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none bg-white"
+              value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Confirmada">Confirmada</option>
+              <option value="Atendida">Atendida</option>
+              <option value="Cancelada">Cancelada</option>
+            </select>
+          </div>
+          <button type="submit" className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-primary transition-colors mt-4">Guardar Cambios</button>
         </form>
       </div>
     </div>
