@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, TrendingUp, Bell, Leaf, DollarSign, Calendar, Trash2, Plus, X, Edit, Clock, Search, Wrench, CheckCircle, KeyRound } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, TrendingUp, Bell, Leaf, DollarSign, Calendar, Trash2, Plus, X, Edit, Clock, Search, Wrench, CheckCircle, KeyRound, Calculator } from 'lucide-react';
 
 const Dashboard = ({ onLogout }) => {
   const [stats, setStats] = useState({
@@ -50,9 +50,10 @@ const Dashboard = ({ onLogout }) => {
   };
 
   const handleSave = async (clientData) => {
-    const method = editingClient ? 'PUT' : 'POST';
-    const url = editingClient 
-      ? `http://localhost:5000/api/activities/${editingClient.id}`
+    const isEdit = clientData.id;
+    const method = isEdit ? 'PUT' : 'POST';
+    const url = isEdit 
+      ? `http://localhost:5000/api/activities/${clientData.id}`
       : 'http://localhost:5000/api/activities';
 
     try {
@@ -92,6 +93,7 @@ const Dashboard = ({ onLogout }) => {
           <NavItem icon={<Users size={20} />} label="Clientes" active={activeTab === 'clientes'} onClick={() => setActiveTab('clientes')} />
           <NavItem icon={<Zap size={20} />} label="Instalaciones" active={activeTab === 'instalaciones'} onClick={() => setActiveTab('instalaciones')} />
           <NavItem icon={<Calendar size={20} />} label="Agenda" active={activeTab === 'agenda'} onClick={() => setActiveTab('agenda')} />
+          <NavItem icon={<Calculator size={20} />} label="Proyectos" active={activeTab === 'proyectos'} onClick={() => setActiveTab('proyectos')} />
           <NavItem icon={<Settings size={20} />} label="Configuración" active={activeTab === 'config'} onClick={() => setActiveTab('config')} />
         </nav>
 
@@ -338,6 +340,18 @@ const Dashboard = ({ onLogout }) => {
             </div>
           )}
 
+          {/* VISTA: PROYECTOS (Antes Presupuestos) */}
+          {activeTab === 'proyectos' && (
+            <ProjectSection 
+              activities={activities}
+              onSaveNew={(data) => {
+                setEditingClient(data);
+                setIsModalOpen(true);
+              }}
+              onUpdateClient={handleSave}
+            />
+          )}
+
           {/* VISTA: CONFIGURACIÓN */}
           {activeTab === 'config' && (
             <div>
@@ -548,6 +562,155 @@ const PasswordChangeForm = () => {
         Actualizar Contraseña
       </button>
     </form>
+  );
+};
+
+const ProjectSection = ({ activities, onSaveNew, onUpdateClient }) => {
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const selectedClient = activities.find(c => c.id === parseInt(selectedClientId));
+
+  const handleProjectSave = (projectData) => {
+    if (selectedClient) {
+      // Update existing client
+      onUpdateClient({
+        ...selectedClient,
+        amount: projectData.rawCost,
+        status: 'En Proceso' // Automatically update status to In Progress
+      });
+      alert(`Proyecto asignado a ${selectedClient.name} con éxito.`);
+    } else {
+      // Create new
+      onSaveNew({ 
+        name: '', 
+        email: '', 
+        status: 'Pendiente', 
+        date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }), 
+        amount: projectData.rawCost 
+      });
+    }
+  };
+
+  return (
+    <div>
+      <div className="mb-8">
+        <h3 className="font-bold text-2xl text-gray-900">Gestión de Proyectos</h3>
+        <p className="text-gray-500 text-sm">Calcula y asigna instalaciones fotovoltaicas.</p>
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cliente</label>
+        <div className="relative">
+          <select 
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none bg-white appearance-none"
+            value={selectedClientId}
+            onChange={(e) => setSelectedClientId(e.target.value)}
+          >
+            <option value="">-- Nuevo Prospecto (Sin cliente asignado) --</option>
+            {activities.map(client => (
+              <option key={client.id} value={client.id}>
+                {client.name} - {client.status}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+            <Users className="w-5 h-5 text-gray-400" />
+          </div>
+        </div>
+        {selectedClient && (
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-800">
+            <p><strong>Cliente seleccionado:</strong> {selectedClient.name}</p>
+            <p><strong>Presupuesto actual:</strong> {selectedClient.amount}</p>
+          </div>
+        )}
+      </div>
+      
+      <BudgetCalculator 
+        client={selectedClient}
+        onSave={handleProjectSave} 
+      />
+    </div>
+  );
+};
+
+const BudgetCalculator = ({ client, onSave }) => {
+  const [consumption, setConsumption] = useState('');
+  const [result, setResult] = useState(null);
+
+  const calculate = (e) => {
+    e.preventDefault();
+    const kwh = parseFloat(consumption);
+    if (!kwh) return;
+
+    // Fórmulas estimadas:
+    // 1. Tamaño Sistema (kWp) = (Consumo Mensual / 30 días) / 4.5 HSP * 1.15 (Pérdidas)
+    const systemSize = (kwh / 30) / 4.5 * 1.15;
+    // 2. Paneles (550W)
+    const panels = Math.ceil(systemSize * 1000 / 550);
+    // 3. Costo Estimado ($1,200 USD por kWp instalado aprox, ajustado a moneda local ejemplo)
+    const cost = Math.round(systemSize * 1200 * 20); // Ejemplo: x20 para convertir a moneda local si fuera necesario, o usar directo.
+    // Usaremos un valor base simple: $15,000 base + $3,500 por panel
+    const estimatedCost = 15000 + (panels * 3500);
+
+    setResult({
+      systemSize: systemSize.toFixed(2),
+      panels,
+      estimatedCost: estimatedCost.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }),
+      rawCost: `$ ${estimatedCost.toLocaleString('es-MX')}`, // Para el formulario
+      monthlyProduction: Math.round(panels * 550 * 4.5 * 30 / 1000)
+    });
+  };
+
+  return (
+    <div className="grid md:grid-cols-2 gap-8">
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 h-fit">
+        <h4 className="font-bold text-lg text-gray-900 mb-4">Calculadora Solar</h4>
+        <form onSubmit={calculate} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Consumo Mensual (kWh)</label>
+            <div className="relative">
+              <input type="number" value={consumption} onChange={e => setConsumption(e.target.value)} required className="w-full pl-4 pr-12 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none" placeholder="Ej: 450" />
+              <span className="absolute right-4 top-3 text-gray-400 font-medium">kWh</span>
+            </div>
+          </div>
+          <button type="submit" className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-primary transition-colors">
+            Calcular Proyecto
+          </button>
+        </form>
+      </div>
+
+      {result && (
+        <div className="bg-primary/5 border border-primary/20 p-8 rounded-2xl animate-fade-in-up">
+          <h4 className="font-bold text-lg text-gray-900 mb-6 flex items-center gap-2">
+            <Zap className="text-primary fill-current" /> Propuesta Técnica
+          </h4>
+          
+          <div className="space-y-6">
+            <div className="flex justify-between items-center border-b border-primary/10 pb-4">
+              <span className="text-gray-600">Potencia</span>
+              <span className="font-bold text-xl text-gray-900">{result.systemSize} kWp</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-primary/10 pb-4">
+              <span className="text-gray-600">Paneles (550W)</span>
+              <span className="font-bold text-xl text-gray-900">{result.panels} pzas</span>
+            </div>
+            <div className="flex justify-between items-center border-b border-primary/10 pb-4">
+              <span className="text-gray-600">Producción Est.</span>
+              <span className="font-bold text-xl text-gray-900">{result.monthlyProduction} kWh/mes</span>
+            </div>
+            <div className="pt-2">
+              <span className="block text-sm text-gray-500 mb-1">Inversión Total</span>
+              <span className="block text-4xl font-extrabold text-primary">{result.estimatedCost}</span>
+            </div>
+            
+            <button 
+              onClick={() => onSave(result)}
+              className="w-full bg-primary text-white font-bold py-3 rounded-lg hover:bg-yellow-600 transition-colors shadow-lg shadow-primary/30">
+              {client ? `Asignar Proyecto a ${client.name}` : 'Guardar como Nuevo Prospecto'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
