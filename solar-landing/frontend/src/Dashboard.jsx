@@ -380,8 +380,13 @@ const Dashboard = ({ onLogout }) => {
                           </span>
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
-                          <span className="font-medium text-gray-600">Presupuesto: <span className="font-bold text-gray-900">{installation.amount}</span></span>
-                          <span className="text-gray-400">{installation.date}</span>
+                          <div>
+                            <span className="block font-medium text-gray-600">Presupuesto: <span className="font-bold text-gray-900">{installation.amount}</span></span>
+                            <span className="block text-gray-400 text-xs mt-1">{installation.date}</span>
+                          </div>
+                          <button onClick={() => { setEditingClient(installation); setIsModalOpen(true); }} className="text-gray-400 hover:text-blue-600 transition-colors p-2 hover:bg-blue-50 rounded-full" title="Editar Instalación">
+                            <Edit size={18} />
+                          </button>
                         </div>
                       </div>
                     ))
@@ -559,10 +564,15 @@ const ClientModal = ({ isOpen, onClose, onSave, client }) => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
               <input required type="text" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
-                value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+                value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} placeholder="Ej: 24 Ene 2026" />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+            <input required type="text" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+              value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
           </div>
           <button type="submit" className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-primary transition-colors mt-4">Guardar</button>
         </form>
