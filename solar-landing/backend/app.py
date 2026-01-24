@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 import time
 import os
 
@@ -118,8 +119,24 @@ def get_dashboard_data():
     activities_query = Activity.query.all()
     activities_data = []
 
-    # Variable para sumar el total de ingresos reales
-    total_income = 0
+    # Configuración para cálculos de fechas
+    today = datetime.now()
+    current_month_income = 0
+    prev_month_income = 0
+
+    # Mapa de meses en español para parsear las fechas
+    months_map = {
+        "Ene": 1, "Feb": 2, "Mar": 3, "Abr": 4, "May": 5, "Jun": 6,
+        "Jul": 7, "Ago": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dic": 12
+    }
+
+    # Determinar mes y año anterior
+    if today.month == 1:
+        prev_month = 12
+        prev_year = today.year - 1
+    else:
+        prev_month = today.month - 1
+        prev_year = today.year
 
     for act in activities_query:
         activities_data.append({
@@ -131,36 +148,65 @@ def get_dashboard_data():
             "amount": act.amount
         })
 
-        # Calcular suma de ingresos (limpiando el formato "$ 1,200" -> 1200.0)
+        # Limpiar monto
         try:
-            clean_amount = act.amount.replace('$', '').replace(',', '').strip()
-            if clean_amount:
-                total_income += float(clean_amount)
+            clean_amount = float(act.amount.replace(
+                '$', '').replace(',', '').strip())
         except ValueError:
-            pass
+            clean_amount = 0
 
-    # --- Cálculos Dinámicos ---
-    # Estimamos la energía y CO2 basándonos en el total de ingresos (tamaño de proyectos).
-    # Factores aproximados basados en tus datos de ejemplo ($45k -> 1.2k MWh).
+        # Parsear fecha y sumar a mes correspondiente
+        try:
+            # Formato esperado: "21 Ene 2026"
+            parts = act.date.replace('.', '').split()
+            if len(parts) >= 3:
+                act_day = int(parts[0])
+                act_month_str = parts[1].capitalize()
+                act_year = int(parts[2])
 
-    total_energy = total_income * 0.0273  # Factor de conversión estimado
-    total_co2 = total_income * 0.0188     # Factor de conversión estimado
+                act_month_num = months_map.get(act_month_str)
+
+                if act_month_num:
+                    # Verificar si es mes actual
+                    if act_year == today.year and act_month_num == today.month:
+                        current_month_income += clean_amount
+                    # Verificar si es mes anterior
+                    elif act_year == prev_year and act_month_num == prev_month:
+                        prev_month_income += clean_amount
+        except Exception as e:
+            print(f"Error calculando fecha para actividad {act.id}: {e}")
+
+    # --- Cálculos de Tendencia ---
+    if prev_month_income > 0:
+        trend_pct = ((current_month_income - prev_month_income) /
+                     prev_month_income) * 100
+    else:
+        # Si no hubo ingresos el mes pasado pero sí este, es un aumento del 100% (o infinito)
+        trend_pct = 100 if current_month_income > 0 else 0
+
+    trend_sign = "+" if trend_pct >= 0 else ""
+    trend_text = f"{trend_sign}{trend_pct:.0f}% vs mes anterior"
+    trend_up = trend_pct >= 0
+
+    # Estimaciones basadas en ingresos del MES ACTUAL
+    current_energy = current_month_income * 0.0273
+    current_co2 = current_month_income * 0.0188
 
     response_stats = {
         "energy": {
-            "value": f"{total_energy:,.0f} MWh",
-            "trend": STATS["energy"]["trend"],
-            "trendUp": STATS["energy"]["trendUp"]
+            "value": f"{current_energy:,.0f} MWh",
+            "trend": trend_text,
+            "trendUp": trend_up
         },
         "co2": {
-            "value": f"{total_co2:,.0f} Ton",
-            "trend": STATS["co2"]["trend"],
-            "trendUp": STATS["co2"]["trendUp"]
+            "value": f"{current_co2:,.0f} Ton",
+            "trend": trend_text,
+            "trendUp": trend_up
         },
         "income": {
-            "value": f"$ {total_income:,.0f}",
-            "trend": STATS["income"]["trend"],
-            "trendUp": STATS["income"]["trendUp"]
+            "value": f"$ {current_month_income:,.0f}",
+            "trend": trend_text,
+            "trendUp": trend_up
         }
     }
 
