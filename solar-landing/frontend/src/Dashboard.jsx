@@ -25,6 +25,7 @@ const Dashboard = ({ onLogout }) => {
   const [dismissedNotifs, setDismissedNotifs] = useState([]);
   const [activeTab, setActiveTab] = useState('resumen');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const loadDashboardData = async () => {
     try {
@@ -189,7 +190,13 @@ const Dashboard = ({ onLogout }) => {
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-800">
       {/* Sidebar */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} />
+      <Sidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        onLogout={onLogout} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content */}
       <main className="flex-1 md:ml-64 overflow-y-auto h-full">
@@ -197,6 +204,7 @@ const Dashboard = ({ onLogout }) => {
         <Header 
           showNotifications={showNotifications} 
           setShowNotifications={setShowNotifications} 
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           notifications={notifications} 
           handleDismiss={handleDismiss} 
           handleDismissAll={handleDismissAll} 

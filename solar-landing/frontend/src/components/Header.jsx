@@ -1,12 +1,17 @@
 import React from 'react';
-import { Bell, Calendar, Zap, X } from 'lucide-react';
+import { Bell, Calendar, Zap, X, Menu } from 'lucide-react';
 
-const Header = ({ showNotifications, setShowNotifications, notifications, handleDismiss, handleDismissAll }) => {
+const Header = ({ showNotifications, setShowNotifications, notifications, handleDismiss, handleDismissAll, toggleSidebar }) => {
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-20">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Hola, Admin 👋</h1>
-        <p className="text-sm text-gray-500">Aquí tienes lo que está pasando hoy.</p>
+    <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 md:px-8 py-4 flex justify-between items-center sticky top-0 z-20">
+      <div className="flex items-center gap-4">
+        <button onClick={toggleSidebar} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden">
+          <Menu size={24} />
+        </button>
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Hola, Admin 👋</h1>
+          <p className="text-xs md:text-sm text-gray-500">Aquí tienes lo que está pasando hoy.</p>
+        </div>
       </div>
       <div className="flex items-center gap-4">
         <div className="relative">

@@ -231,14 +231,14 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
   return (
     <div>
       {/* Header del Wizard */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h3 className="font-bold text-2xl text-gray-900">Nuevo Proyecto</h3>
           <p className="text-gray-500 text-sm">Paso {currentStep} de {totalSteps}: <span className="font-bold text-primary">{steps[currentStep - 1]}</span></p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           {Array.from({ length: totalSteps }).map((_, i) => (
-            <div key={i} className={`h-2 w-8 rounded-full transition-colors ${i + 1 <= currentStep ? 'bg-primary' : 'bg-gray-200'}`} />
+            <div key={i} className={`h-2 flex-1 sm:w-8 rounded-full transition-colors ${i + 1 <= currentStep ? 'bg-primary' : 'bg-gray-200'}`} />
           ))}
         </div>
       </div>
@@ -250,8 +250,8 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {currentStep === 1 && (
           <div className="animate-fade-in-up">
             <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cliente</label>
-            <div className="flex gap-4 items-center mb-6">
-              <div className="relative flex-grow">
+            <div className="flex flex-col sm:flex-row gap-4 items-center mb-6">
+              <div className="relative flex-grow w-full">
               <select
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none bg-white appearance-none"
               value={selectedClientId}
@@ -268,7 +268,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
                 <Users className="w-5 h-5 text-gray-400" />
               </div>
             </div>
-            <button onClick={() => onSaveNew({})} className="bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors flex items-center gap-2">
+            <button onClick={() => onSaveNew({})} className="bg-gray-100 text-gray-700 px-4 py-3 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto">
               <Plus size={16} /> Registrar Cliente
             </button>
             </div>
@@ -299,7 +299,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {/* PASO 3: CONSUMO */}
         {currentStep === 3 && (
           <div className="animate-fade-in-up">
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Geradora</label>
                 <select name="geradora" value={consumoData.geradora} onChange={handleConsumoChange} className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none bg-white">
@@ -324,7 +324,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
 
             <div className="border-t border-gray-100 pt-4 mb-6">
             <h5 className="font-bold text-sm text-gray-700 mb-3">Histórico de Consumo (kWh)</h5>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {Object.keys(consumoData.meses).map((mes) => (
                 <div key={mes}>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{mes}</label>
@@ -363,7 +363,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {/* PASO 4: DIMENSIÓN */}
         {currentStep === 4 && (
           <div className="animate-fade-in-up">
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <FormInput label="Potência do Painel (W)" type="number" name="potenciaPanel" value={potenciaPanel} onChange={e => setPotenciaPanel(e.target.value)} required />
               <FormInput label="FP (%)" type="number" name="fp" value={fp} onChange={e => setFp(e.target.value)} required />
             </div>
@@ -390,7 +390,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {currentStep === 5 && (
           <div className="animate-fade-in-up space-y-4">
              {/* Kit */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Selecionar Kit</label>
                   <select name="kitSelection" value={budget.kitSelection} onChange={handleBudgetChange} className="w-full p-2 rounded border border-gray-300 text-xs">
@@ -410,7 +410,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <FormInput label="Valor do Kit" name="valorKit" type="number" value={budget.valorKit} onChange={handleBudgetChange} />
                 <FormInput label="Desconto Kit" name="descontoKit" type="number" value={budget.descontoKit} onChange={handleBudgetChange} />
                 <div className="bg-gray-50 p-2 rounded border border-gray-200">
@@ -420,7 +420,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
               </div>
 
               {/* Labor & Materials */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <FormInput label="Mão de Obra (Un)" name="maoDeObra" type="number" value={budget.maoDeObra} onChange={handleBudgetChange} />
                 <div className="bg-gray-50 p-2 rounded border border-gray-200">
                   <label className="block text-xs text-gray-500">Calc. Mão de Obra</label>
@@ -430,7 +430,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
               </div>
 
               {/* Project & Tax */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <FormInput label="Valor do Projeto" name="valorProjeto" type="number" value={budget.valorProjeto} onChange={handleBudgetChange} />
                 <FormInput label="Imposto Serviço (%)" name="impostoServicoPct" type="number" value={budget.impostoServicoPct} onChange={handleBudgetChange} />
                 <div className="bg-gray-50 p-2 rounded border border-gray-200">
@@ -440,7 +440,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
               </div>
 
               {/* Commissions & Margin */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <FormInput label="Comissão 01 (%)" name="comissao1Pct" type="number" value={budget.comissao1Pct} onChange={handleBudgetChange} />
                 <FormInput label="Comissão 02 (%)" name="comissao2Pct" type="number" value={budget.comissao2Pct} onChange={handleBudgetChange} />
                 <FormInput label="Margem Emp. (%)" name="margemEmpPct" type="number" value={budget.margemEmpPct} onChange={handleBudgetChange} />
@@ -492,7 +492,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
                     {/* Right side: Results */}
                     <div className="space-y-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
                         <h5 className="font-bold text-gray-800">Resultados de la Simulación</h5>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormInput label="Fatura antes do solar (R$)" name="faturaAntesSolar" value={financingData.faturaAntesSolar} onChange={handleFinancingChange} />
                             <FormInput label="Fatura após solar (R$)" name="faturaAposSolar" value={financingData.faturaAposSolar} onChange={handleFinancingChange} />
                             <FormInput label="Economia sistema (%)" name="economiaSistema" value={financingData.economiaSistema} onChange={handleFinancingChange} />
@@ -517,7 +517,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
               <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
                 <h5 className="font-bold text-gray-800 border-b border-gray-100 pb-2">Módulo Fotovoltaico</h5>
                 <FormInput label="Marca" name="moduleBrand" value={kitData.moduleBrand} onChange={handleKitChange} />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormInput label="Garantia Linear (anos)" name="moduleLinearWarranty" type="number" value={kitData.moduleLinearWarranty} onChange={handleKitChange} />
                   <FormInput label="Garantia Defeito (anos)" name="moduleDefectWarranty" type="number" value={kitData.moduleDefectWarranty} onChange={handleKitChange} />
                 </div>
@@ -527,7 +527,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
               <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
                 <h5 className="font-bold text-gray-800 border-b border-gray-100 pb-2">Inversor Fotovoltaico</h5>
                 <FormInput label="Marca" name="inverterBrand" value={kitData.inverterBrand} onChange={handleKitChange} />
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <FormInput label="Quantidade" name="inverterQuantity" type="number" value={kitData.inverterQuantity} onChange={handleKitChange} />
                   <FormInput label="Potência Total (kW)" name="inverterPower" type="number" value={kitData.inverterPower} onChange={handleKitChange} />
                   <FormInput label="Garantia (anos)" name="inverterDefectWarranty" type="number" value={kitData.inverterDefectWarranty} onChange={handleKitChange} />
