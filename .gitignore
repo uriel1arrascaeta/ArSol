@@ -1,0 +1,22 @@
+# Bases de datos
+*.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Entornos virtuales
+.venv/
+
+# Node
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
