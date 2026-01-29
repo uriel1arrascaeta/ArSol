@@ -11,7 +11,7 @@ const App = () => {
     return localStorage.getItem('isAuthenticated') === 'true' ? 'dashboard' : 'landing';
   });
   const COMPANY_NAME = "ArSol";
-  const WHATSAPP_NUMBER = "5548999999999"; // Reemplaza con tu número de WhatsApp
+  const WHATSAPP_NUMBER = "5548996539440"; // Reemplaza con tu número de WhatsApp
   const WHATSAPP_MESSAGE = "Hola! Me gustaría solicitar un presupuesto para un sistema de energía solar.";
   
   const [contactForm, setContactForm] = useState({
