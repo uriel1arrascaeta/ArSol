@@ -11,6 +11,8 @@ const App = () => {
     return localStorage.getItem('isAuthenticated') === 'true' ? 'dashboard' : 'landing';
   });
   const COMPANY_NAME = "ArSol";
+  const WHATSAPP_NUMBER = "5548999999999"; // Reemplaza con tu número de WhatsApp
+  const WHATSAPP_MESSAGE = "Hola! Me gustaría solicitar un presupuesto para un sistema de energía solar.";
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -235,7 +237,6 @@ const App = () => {
               </div>
             </div>
 
-            <AppointmentForm />
             <div className="bg-white/10 p-8 rounded-2xl border border-white/10 shadow-lg text-center">
                 <p className="text-gray-300 mb-8">
                     Haz clic en el botón de abajo para hablar directamente con un especialista por WhatsApp y obtener tu cotización personalizada.
