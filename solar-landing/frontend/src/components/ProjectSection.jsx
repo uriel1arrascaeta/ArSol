@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Calculator, Zap, ChevronLeft, ChevronRight, Save, Landmark, Package } from 'lucide-react';
+import { Users, Plus, Calculator, Zap, ChevronLeft, ChevronRight, Save, Landmark, Package, Upload, Loader2 } from 'lucide-react';
 
 const FormInput = ({ label, name, type = 'text', value, onChange, placeholder, required = false }) => (
   <div>
@@ -111,6 +111,8 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
     observation: ''
   });
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   // --- LÓGICA DE CÁLCULOS ---
 
   // Cálculos de Consumo (Derivados)
@@ -132,6 +134,41 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
   const handleFinancingChange = (e) => {
     const { name, value } = e.target;
     setFinancingData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsAnalyzing(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/analyze-bill', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setConsumoData(prev => ({
+          ...prev,
+          unidadConsumo: result.data.unidadConsumo || prev.unidadConsumo,
+          grupoTarifario: result.data.grupoTarifario || prev.grupoTarifario,
+          fase: result.data.fase || prev.fase,
+          costoFijo: result.data.costoFijo || prev.costoFijo,
+          tarifa: result.data.tarifa || prev.tarifa,
+          meses: { ...prev.meses, ...result.data.meses }
+        }));
+        alert("¡Datos extraídos con IA correctamente!");
+      }
+    } catch (error) {
+      console.error("Error analizando recibo:", error);
+      alert("Error al analizar el recibo.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleKitChange = (e) => {
@@ -299,6 +336,19 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {/* PASO 3: CONSUMO */}
         {currentStep === 3 && (
           <div className="animate-fade-in-up">
+            {/* AI Upload Section */}
+            <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h5 className="font-bold text-blue-900 flex items-center gap-2"><Zap size={18} /> Auto-completar con IA</h5>
+                <p className="text-sm text-blue-700">Sube una foto del recibo de luz y la IA llenará los datos por ti.</p>
+              </div>
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold cursor-pointer transition-colors ${isAnalyzing ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                {isAnalyzing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                <span>{isAnalyzing ? 'Analizando...' : 'Subir Recibo'}</span>
+                <input type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileUpload} disabled={isAnalyzing} />
+              </label>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Geradora</label>

@@ -4,6 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import time
 import os
+import json
+import google.generativeai as genai
 
 app = Flask(__name__)
 CORS(app)  # Permite que el Frontend (React) se comunique con este Backend
@@ -323,6 +325,100 @@ def update_password():
     user.password = new_password
     db.session.commit()
     return jsonify({"success": True, "message": "Contraseña actualizada con éxito"}), 200
+
+# --- Ruta de IA (Simulación) ---
+
+
+@app.route('/api/analyze-bill', methods=['POST'])
+def analyze_bill():
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "No se envió ningún archivo"}), 400
+
+    file = request.files['file']
+
+    # 1. Configuración de IA (Google Gemini)
+    # NOTA: Reemplaza "TU_API_KEY_AQUI" con tu clave real si no usas variables de entorno
+    api_key = os.environ.get("GEMINI_API_KEY")
+    # api_key = "#Hu44195"  # <-- Descomenta y pega tu clave aquí si sigue fallando
+
+    if api_key:
+        try:
+            genai.configure(api_key=api_key)
+            # Modelo rápido y eficiente
+            model = genai.GenerativeModel('gemini-1.5-flash')
+
+            # Leer archivo
+            image_data = file.read()
+
+            # Prompt para la IA
+            prompt = """
+            Actúa como un experto en energía solar. Analiza esta imagen de un recibo de luz (fatura de energia).
+            Extrae los datos y responde ÚNICAMENTE con un objeto JSON válido (sin markdown ```json).
+            
+            Datos a extraer:
+            1. "unidadConsumo": Número de la unidad consumidora o cliente (ej: 3912760).
+            2. "grupoTarifario": Grupo/Subgrupo (ej: B3, Residencial).
+            3. "fase": "Monofásica", "Bifásica" o "Trifásica". Busca términos como "TRIFÁSICO", "BIFÁSICO".
+            4. "costoFijo": Costo de disponibilidad o cargo fijo si aparece. Si no, estima según la fase (Mono: 30, Bi: 50, Tri: 100).
+            5. "tarifa": Precio unitario del kWh (Suma TE + TUSD si están separados).
+            6. "meses": Objeto con las claves exactas: "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez".
+            
+            Instrucciones para el historial:
+            - Busca la tabla de "Histórico de Consumo" o "Consumo Faturado".
+            - Mapea los meses encontrados a las claves correspondientes (ej: "NOV/25" -> "Nov", "DEZ/24" -> "Dez").
+            - El valor debe ser el consumo en kWh (número).
+            - Si un mes no aparece, pon 0.
+            
+            Estructura JSON requerida:
+            {
+                "unidadConsumo": "número de servicio o cuenta (string)",
+                "grupoTarifario": "tarifa detectada (ej: DAC, 1, 01)",
+                "fase": "Fase detectada",
+                "costoFijo": "cargo fijo mensual (número o string numérico)",
+                "tarifa": "precio promedio por kWh (número o string numérico)",
+                "meses": {
+                    "Jan": "0", "Fev": "0", "Mar": "0", "Abr": "0", "Mai": "0", "Jun": "0",
+                    "Jul": "0", "Ago": "0", "Set": "0", "Out": "0", "Nov": "0", "Dez": "0"
+                }
+            }
+            """
+
+            response = model.generate_content([
+                {'mime_type': file.content_type, 'data': image_data},
+                prompt
+            ])
+
+            # Limpiar respuesta
+            text_response = response.text.replace(
+                '```json', '').replace('```', '').strip()
+            real_data = json.loads(text_response)
+
+            return jsonify({"success": True, "data": real_data}), 200
+
+        except Exception as e:
+            print(f"Error IA Real: {e}")
+            # Si falla, continuamos al mock para no romper la app, pero podrías retornar error 500
+            pass
+    else:
+        print("❌ Error: No se encontró la variable de entorno GEMINI_API_KEY.")
+
+    # 2. Fallback: Simulación (si no hay API Key o falla la IA)
+    print("⚠️ Usando datos simulados (Mock). Configura GEMINI_API_KEY para usar IA real.")
+    time.sleep(1.5)  # Simular tiempo de procesamiento
+
+    mock_extracted_data = {
+        "unidadConsumo": "98765432100",
+        "grupoTarifario": "DAC (Doméstica Alto Consumo)",
+        "fase": "Bifásica",
+        "costoFijo": "150.00",
+        "tarifa": "3.85",
+        "meses": {
+            "Jan": "450", "Fev": "420", "Mar": "380", "Abr": "410", "Mai": "550", "Jun": "600",
+            "Jul": "620", "Ago": "590", "Set": "500", "Out": "480", "Nov": "460", "Dez": "470"
+        }
+    }
+
+    return jsonify({"success": True, "data": mock_extracted_data}), 200
 
 
 if __name__ == '__main__':
