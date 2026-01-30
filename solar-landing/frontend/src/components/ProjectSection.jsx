@@ -40,7 +40,7 @@ const FinanceResultItem = ({ label, value, unit, highlight = false }) => (
 const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 7;
-  const steps = ["Cliente", "Concesionaria", "Consumo", "Dimensión", "Presupuesto", "Financiamiento", "Kit"];
+  const steps = ["Cliente", "Concessionária", "Consumo", "Dimensionamento", "Orçamento", "Financiamento", "Kit"];
 
   // --- ESTADOS DEL PROYECTO ---
   
@@ -161,11 +161,11 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
           tarifa: result.data.tarifa || prev.tarifa,
           meses: { ...prev.meses, ...result.data.meses }
         }));
-        alert("¡Datos extraídos con IA correctamente!");
+        alert("Dados extraídos com IA corretamente!");
       }
     } catch (error) {
       console.error("Error analizando recibo:", error);
-      alert("Error al analizar el recibo.");
+      alert("Erro ao analisar a conta.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -183,7 +183,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
     const powerFactor = parseFloat(fp) / 100;
 
     if (!kwh || !panelWatts || !powerFactor) {
-      alert("Por favor, complete los datos de consumo y parámetros de dimensión.");
+      alert("Por favor, preencha os dados de consumo e parâmetros de dimensionamento.");
       return;
     }
 
@@ -251,7 +251,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         amount: projectData.rawCost,
         status: 'En Proceso' // Actualizar estado a En Proceso
       });
-      alert(`Proyecto asignado a ${selectedClient.name} con éxito.`);
+      alert(`Projeto atribuído a ${selectedClient.name} com sucesso.`);
     } else {
       // Crear nuevo prospecto (abre el modal de cliente)
       onSaveNew({
@@ -270,7 +270,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
       {/* Header del Wizard */}
       <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 className="font-bold text-2xl text-gray-900">Nuevo Proyecto</h3>
+          <h3 className="font-bold text-2xl text-gray-900">Novo Projeto</h3>
           <p className="text-gray-500 text-sm">Paso {currentStep} de {totalSteps}: <span className="font-bold text-primary">{steps[currentStep - 1]}</span></p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -286,7 +286,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {/* PASO 1: CLIENTE */}
         {currentStep === 1 && (
           <div className="animate-fade-in-up">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Cliente</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Cliente</label>
             <div className="flex flex-col sm:flex-row gap-4 items-center mb-6">
               <div className="relative flex-grow w-full">
               <select
@@ -294,7 +294,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
               value={selectedClientId}
               onChange={(e) => setSelectedClientId(e.target.value)}
             >
-              <option value="">-- Nuevo Prospecto --</option>
+              <option value="">-- Novo Prospecto --</option>
               {activities.map(client => (
                 <option key={client.id} value={client.id}>
                   {client.name} ({client.status})
@@ -311,7 +311,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
             </div>
             {selectedClient && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-800">
-                <p><strong>Cliente seleccionado:</strong> {selectedClient.name} | <strong>Email:</strong> {selectedClient.email}</p>
+                <p><strong>Cliente selecionado:</strong> {selectedClient.name} | <strong>E-mail:</strong> {selectedClient.email}</p>
               </div>
             )}
           </div>
@@ -320,13 +320,13 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {/* PASO 2: CONCESIONARIA */}
         {currentStep === 2 && (
           <div className="animate-fade-in-up max-w-md mx-auto">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Concesionaria</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Empresa Concessionária</label>
             <select
               value={concesionaria}
               onChange={(e) => setConcesionaria(e.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none bg-white"
             >
-              <option value="">-- Seleccione Empresa --</option>
+              <option value="">-- Selecione Empresa --</option>
               <option value="CFE">CFE</option>
               <option value="Luz y Fuerza">Luz y Fuerza</option>
             </select>
@@ -339,12 +339,12 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
             {/* AI Upload Section */}
             <div className="mb-6 bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
-                <h5 className="font-bold text-blue-900 flex items-center gap-2"><Zap size={18} /> Auto-completar con IA</h5>
-                <p className="text-sm text-blue-700">Sube una foto del recibo de luz y la IA llenará los datos por ti.</p>
+                <h5 className="font-bold text-blue-900 flex items-center gap-2"><Zap size={18} /> Preencher com IA</h5>
+                <p className="text-sm text-blue-700">Envie uma foto da conta de luz e a IA preencherá os dados para você.</p>
               </div>
               <label className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold cursor-pointer transition-colors ${isAnalyzing ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
                 {isAnalyzing ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                <span>{isAnalyzing ? 'Analizando...' : 'Subir Recibo'}</span>
+                <span>{isAnalyzing ? 'Analisando...' : 'Enviar Conta'}</span>
                 <input type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileUpload} disabled={isAnalyzing} />
               </label>
             </div>
@@ -373,7 +373,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
             </div>
 
             <div className="border-t border-gray-100 pt-4 mb-6">
-            <h5 className="font-bold text-sm text-gray-700 mb-3">Histórico de Consumo (kWh)</h5>
+            <h5 className="font-bold text-sm text-gray-700 mb-3">Histórico de Consumo</h5>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {Object.keys(consumoData.meses).map((mes) => (
                 <div key={mes}>
@@ -391,7 +391,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
             </div>
 
             <div className="border-t border-gray-100 pt-4">
-            <h5 className="font-bold text-sm text-gray-700 mb-3">Resumen de Consumo</h5>
+            <h5 className="font-bold text-sm text-gray-700 mb-3">Resumo de Consumo</h5>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               <div className="bg-gray-50 p-3 rounded-lg">
                 <span className="text-xs text-gray-500 block">Consumo Total</span>
@@ -419,7 +419,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
             </div>
             
             <button onClick={calculateDimension} className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 mb-8">
-              <Calculator size={16} /> Calcular Dimensión
+              <Calculator size={16} /> Calcular Dimensionamento
             </button>
 
             {result && (
@@ -429,7 +429,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
                   <ResultItem label="Potência do Sistema" value={`${result.potenciaIdeal} kWp`} />
                   <ResultItem label="Qtde. Painéis" value={`${result.cantidadPaneles} pzas`} />
                   <ResultItem label="Área mínima" value={`${result.areaMinima} m²`} />
-                  <ResultItem label="Producción Estimada" value={`${result.monthlyProduction} kWh/mes`} />
+                  <ResultItem label="Produção Estimada" value={`${result.monthlyProduction} kWh/mês`} />
                 </div>
               </div>
             )}
@@ -509,13 +509,13 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {currentStep === 6 && (
             <div className="animate-fade-in-up">
                 <h4 className="font-bold text-lg text-gray-900 mb-6 flex items-center gap-2">
-                    <Landmark className="text-primary" /> Simulación de Financiamiento
+                    <Landmark className="text-primary" /> Simulação de Financiamento
                 </h4>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left side: Inputs */}
                     <div className="space-y-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                        <h5 className="font-bold text-gray-800">Parámetros del Financiamiento</h5>
+                        <h5 className="font-bold text-gray-800">Parâmetros do Financiamento</h5>
                         <FormInput 
                             label="Taxa do Financiamento (% a.m.)" 
                             name="taxaFinanciamento" 
@@ -541,7 +541,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
 
                     {/* Right side: Results */}
                     <div className="space-y-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                        <h5 className="font-bold text-gray-800">Resultados de la Simulación</h5>
+                        <h5 className="font-bold text-gray-800">Resultados da Simulação</h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormInput label="Fatura antes do solar (R$)" name="faturaAntesSolar" value={financingData.faturaAntesSolar} onChange={handleFinancingChange} />
                             <FormInput label="Fatura após solar (R$)" name="faturaAposSolar" value={financingData.faturaAposSolar} onChange={handleFinancingChange} />
@@ -559,7 +559,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         {currentStep === 7 && (
           <div className="animate-fade-in-up">
             <h4 className="font-bold text-lg text-gray-900 mb-6 flex items-center gap-2">
-              <Package className="text-primary" /> Configuración del Kit
+              <Package className="text-primary" /> Configuração do Kit
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
@@ -587,7 +587,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
 
             {/* Observación */}
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Observación</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Observação</label>
               <textarea
                 name="observation"
                 value={kitData.observation}
@@ -610,11 +610,11 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
         
         {currentStep < totalSteps ? (
           <button onClick={nextStep} className="flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary transition-colors">
-            Siguiente <ChevronRight size={20} />
+            Próximo <ChevronRight size={20} />
           </button>
         ) : (
           <button onClick={handleFinalSave} className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-lg shadow-green-600/30">
-            <Save size={20} /> Guardar Proyecto
+            <Save size={20} /> Salvar Projeto
           </button>
         )}
       </div>
