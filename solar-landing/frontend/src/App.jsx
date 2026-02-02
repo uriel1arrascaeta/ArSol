@@ -64,13 +64,11 @@ const App = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex items-center gap-2 group cursor-pointer">
-              <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary to-yellow-600 rounded-xl shadow-lg shadow-primary/30">
-              <div className="relative flex items-center justify-center w-10 h-10 bg-gradient-to-br from-[#FF7A00] to-[#E66E00] rounded-xl shadow-lg shadow-[#FF7A00]/30">
-                <Sun className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              <img src="/logoArsol.png" alt="Logo ArSol" className="h-10 w-auto object-contain" />
+              {/*<span className="text-2xl font-extrabold text-gray-900 tracking-tight">
                 {COMPANY_NAME}
-              </span>
+              </span>*/}
+
             </div>
 
             {/* Desktop Menu */}
@@ -337,10 +335,8 @@ const App = () => {
       <footer className="bg-gray-950 text-gray-400 py-12 border-t border-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#FF7A00] rounded-lg flex items-center justify-center">
-              <Sun className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">{COMPANY_NAME}</span>
+              <img src="/logoArsol.png" alt="Logo ArSol" className="h-10 w-auto object-contain" />
+            {/*<span className="text-xl font-bold text-white">{COMPANY_NAME}</span>*/}
           </div>
           <p className="text-sm">© {new Date().getFullYear()} {COMPANY_NAME}. Todos os direitos reservados.</p>
           <div className="flex gap-6 text-sm font-medium">

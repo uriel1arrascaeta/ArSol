@@ -220,8 +220,8 @@ const Dashboard = ({ onLogout }) => {
               value={stats.energy.value} 
               trend={stats.energy.trend} 
               trendUp={stats.energy.trendUp}
-              icon={<Zap className="text-yellow-600 h-6 w-6" />} 
-              bg="bg-yellow-50"
+              icon={<Zap className="text-[#FF7A00] h-6 w-6" />} 
+              bg="bg-[#FF7A00]/10"
             />
             <StatCard 
               title="CO2 Evitado" 
@@ -245,7 +245,7 @@ const Dashboard = ({ onLogout }) => {
               <h3 className="font-bold text-lg text-gray-900">Solicitudes Recientes</h3>
               <button 
                 onClick={() => { setEditingClient(null); setIsModalOpen(true); }}
-                className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary transition-colors flex items-center gap-2"
+                className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#FF7A00] transition-colors flex items-center gap-2"
               >
                 <Plus size={16} />
                 Nuevo Cliente
@@ -292,7 +292,7 @@ const Dashboard = ({ onLogout }) => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-8 py-6 border-b border-gray-100">
                 <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                  <Calendar className="text-primary" /> Agenda de Citas
+                  <Calendar className="text-[#FF7A00]" /> Agenda de Citas
                 </h3>
                 <p className="text-gray-500 text-sm mt-1">Citas programadas desde la Landing Page.</p>
               </div>
@@ -349,7 +349,7 @@ const Dashboard = ({ onLogout }) => {
                   <input 
                     type="text" 
                     placeholder="Buscar por nombre o email..." 
-                    className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none w-full sm:w-64 transition-all"
+                    className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#FF7A00] focus:border-transparent outline-none w-full sm:w-64 transition-all"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -461,7 +461,7 @@ const Dashboard = ({ onLogout }) => {
 
               <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-lg">
                 <h4 className="font-bold text-lg text-gray-900 flex items-center gap-2 mb-6">
-                  <KeyRound className="text-primary" />
+                  <KeyRound className="text-[#FF7A00]" />
                   Cambiar Contraseña
                 </h4>
                 <PasswordChangeForm />
@@ -492,7 +492,7 @@ const Dashboard = ({ onLogout }) => {
 
 const TableRow = ({ name, email, status, date, amount, onDelete, onEdit }) => {
   const statusStyles = {
-    Pendiente: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    Pendiente: "bg-[#FF7A00]/20 text-[#CC6200] border-[#FF7A00]/30",
     Completado: "bg-green-100 text-green-700 border-green-200",
     "En Proceso": "bg-blue-100 text-blue-700 border-blue-200"
   };
