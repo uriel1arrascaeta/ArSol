@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Sun, Battery, DollarSign, Menu, X, CheckCircle, ArrowRight, Phone, Zap, ShieldCheck, Leaf, Lock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Sun, Battery, DollarSign, Menu, X, CheckCircle, ArrowRight, Phone, Zap, ShieldCheck, Leaf, Lock, MapPin } from 'lucide-react';
 import Dashboard from './Dashboard';
 import AdminLogin from './AdminLogin';
 //import AppointmentForm from './AppointmentForm';
@@ -18,8 +18,42 @@ const App = () => {
     name: '',
     phone: '',
     email: '',
-    billAmount: ''
+    billAmount: '',
+    address: ''
   });
+  
+  const addressInputRef = useRef(null);
+
+  useEffect(() => {
+    const initAutocomplete = () => {
+      if (window.google && addressInputRef.current) {
+        const autocomplete = new window.google.maps.places.Autocomplete(addressInputRef.current, {
+          types: ['address'],
+          componentRestrictions: { country: 'br' }, // Restringido a Brasil por defecto
+          fields: ['formatted_address', 'geometry']
+        });
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place.formatted_address) {
+            setContactForm(prev => ({ ...prev, address: place.formatted_address }));
+          }
+        });
+      }
+    };
+
+    if (!window.google) {
+      const script = document.createElement('script');
+      // REEMPLAZA 'TU_API_KEY' CON TU CLAVE REAL DE GOOGLE MAPS
+      script.src = `https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initAutocomplete;
+      document.body.appendChild(script);
+    } else {
+      initAutocomplete();
+    }
+  }, []);
 
   const handleContactChange = (e) => {
     const { name, value } = e.target;
@@ -28,11 +62,11 @@ const App = () => {
 
   const handleWhatsAppRedirect = (e) => {
     e.preventDefault();
-    const { name, phone, email, billAmount } = contactForm;
+    const { name, phone, email, billAmount, address } = contactForm;
     
     if (!name || !phone || !email || !billAmount) return;
 
-    const message = `Olá ArSol! Meu nome é ${name}. \n\nGostaria de solicitar um orçamento.\n⚡ Consumo aproximado: ${billAmount}\n📱 Telefone: ${phone}\n📧 E-mail: ${email}`;
+    const message = `Olá ArSol! Meu nome é ${name}. \n\nGostaria de solicitar um orçamento.\n⚡ Consumo aproximado: ${billAmount}\n📍 Endereço: ${address}\n📱 Telefone: ${phone}\n📧 E-mail: ${email}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -64,7 +98,7 @@ const App = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex items-center gap-2 group cursor-pointer">
-              <img src="/logoArsol.png" alt="Logo ArSol" className="h-10 w-auto object-contain" />
+<img src="/logoArsol.PNG" alt="ArSol Solar" className="h-12 w-auto object-contain" />
               {/*<span className="text-2xl font-extrabold text-gray-900 tracking-tight">
                 {COMPANY_NAME}
               </span>*/}
@@ -300,6 +334,22 @@ const App = () => {
                       />
                     </div>
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">Endereço / Localização</label>
+                    <div className="relative">
+                      <input 
+                        ref={addressInputRef}
+                        type="text" 
+                        name="address"
+                        value={contactForm.address}
+                        onChange={handleContactChange}
+                        className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all"
+                        placeholder="Rua, Número, Cidade..."
+                      />
+                      <MapPin className="absolute left-3 top-3.5 text-gray-500 h-5 w-5" />
+                    </div>
+                  </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">Quanto você paga de luz aprox.?</label>
@@ -332,13 +382,13 @@ const App = () => {
       </section>
 
       {/* --- FOOTER --- */}
-      <footer className="bg-gray-950 text-gray-400 py-12 border-t border-gray-900">
+      <footer className="bg-white text-gray-500 py-12 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-              <img src="/logoArsol.png" alt="Logo ArSol" className="h-10 w-auto object-contain" />
+<img src="/logoArsol.PNG" alt="ArSol Solar" className="h-8 w-auto object-contain" />
             {/*<span className="text-xl font-bold text-white">{COMPANY_NAME}</span>*/}
           </div>
-          <p className="text-sm">© {new Date().getFullYear()} {COMPANY_NAME}. Todos os direitos reservados.</p>
+          <p className="text-sm text-gray-800 font-medium">© {new Date().getFullYear()} {COMPANY_NAME}. Todos os direitos reservados.</p>
           <div className="flex gap-6 text-sm font-medium">
             <a href="#" className="hover:text-[#FF7A00] transition-colors">Privacidade</a>
             <a href="#" className="hover:text-[#FF7A00] transition-colors">Termos</a>
