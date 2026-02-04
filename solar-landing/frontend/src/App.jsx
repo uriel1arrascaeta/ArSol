@@ -98,7 +98,7 @@ const App = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <div className="flex items-center gap-2 group cursor-pointer">
-<img src="/logoArsol.PNG" alt="ArSol Solar" className="h-12 w-auto object-contain" />
+<img src="/logoArsol.png" alt="ArSol Solar" className="h-12 w-auto object-contain" />
               {/*<span className="text-2xl font-extrabold text-gray-900 tracking-tight">
                 {COMPANY_NAME}
               </span>*/}
@@ -385,7 +385,7 @@ const App = () => {
       <footer className="bg-white text-gray-500 py-12 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-<img src="/logoArsol.PNG" alt="ArSol Solar" className="h-8 w-auto object-contain" />
+<img src="/logoArsol.png" alt="ArSol Solar" className="h-8 w-auto object-contain" />
             {/*<span className="text-xl font-bold text-white">{COMPANY_NAME}</span>*/}
           </div>
           <p className="text-sm text-gray-800 font-medium">© {new Date().getFullYear()} {COMPANY_NAME}. Todos os direitos reservados.</p>
