@@ -431,6 +431,10 @@ def analyze_bill():
 
 # Ejecutar creación de tablas al iniciar la app (necesario para Render/Gunicorn)
 # Esto asegura que las tablas existan antes de recibir peticiones
-init_db()
+try:
+    init_db()
+except Exception as e:
+    print(f"Error al inicializar la base de datos: {e}")
 
 if __name__ == '__main__':
+    app.run(debug=True, port=5000)
