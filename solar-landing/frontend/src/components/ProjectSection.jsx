@@ -111,6 +111,8 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
     observation: ''
   });
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // --- LÓGICA DE CÁLCULOS ---
@@ -145,7 +147,7 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://localhost:5000/api/analyze-bill', {
+      const response = await fetch(`${API_URL}/api/analyze-bill`, {
         method: 'POST',
         body: formData
       });

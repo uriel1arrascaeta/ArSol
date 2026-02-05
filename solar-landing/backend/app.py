@@ -10,10 +10,18 @@ import google.generativeai as genai
 app = Flask(__name__)
 CORS(app)  # Permite que el Frontend (React) se comunique con este Backend
 
-# --- Configuración de Base de Datos (SQLite) ---
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
-    os.path.join(basedir, 'database.db')
+# --- Configuración de Base de Datos (PostgreSQL para Render) ---
+# Render proporciona la URL de la base de datos en la variable de entorno DATABASE_URL.
+database_url = os.environ.get('DATABASE_URL')
+
+if not database_url:
+    database_url = 'postgresql://postgres:postgres123@127.0.0.1:5432/arsol-db'
+
+if database_url and database_url.startswith("postgres://"):
+    # SQLAlchemy prefiere 'postgresql://' en lugar de 'postgres://'
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
