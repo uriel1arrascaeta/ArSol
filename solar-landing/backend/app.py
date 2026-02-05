@@ -429,6 +429,8 @@ def analyze_bill():
     return jsonify({"success": True, "data": mock_extracted_data}), 200
 
 
+# Ejecutar creación de tablas al iniciar la app (necesario para Render/Gunicorn)
+# Esto asegura que las tablas existan antes de recibir peticiones
+init_db()
+
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True, port=5000)
