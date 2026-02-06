@@ -1,8 +1,3 @@
-databases:
-  - name: arsol-db
-    plan: free
-    databaseName: arsoldb
-
 services:
   - type: web
     name: arsol-backend
@@ -13,8 +8,6 @@ services:
     startCommand: gunicorn app:app
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: arsol-db
-          property: connectionString
+        value: postgresql://arsoldb_user:7T7xTevl3eub9ldoAG1MMdKtFgt8aCHl@dpg-d62vc4pr0fns73dpss7g-a/arsoldb
       - key: PYTHON_VERSION
         value: 3.13.4
