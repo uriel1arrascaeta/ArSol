@@ -299,12 +299,17 @@ def submit_lead():
             'e': isales_e,
             'fid': isales_fid,
             'redirect': '1',
+            'teste': 'Sim',
             'nome': data.get('name', ''),
             'email': data.get('email', ''),
             'telefone': data.get('phone', ''),
-            'valor_energia': data.get('billAmount', '')}
+            'valor_energia': data.get('billAmount', ''),
+            'cidade': data.get('address', '')
+        }
 
-        print(f"Datos recibidos para CRM: {data}")
+        # Enviar solicitud POST como form-data (application/x-www-form-urlencoded)
+        response = requests.post(isales_url, data=isales_payload)
+        print(f"Respuesta CRM: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Error enviando a CRM: {e}")
 
