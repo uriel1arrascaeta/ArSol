@@ -12,7 +12,7 @@ const App = () => {
     return localStorage.getItem('isAuthenticated') === 'true' ? 'dashboard' : 'landing';
   });
   const COMPANY_NAME = "ArSol";
-  const WHATSAPP_NUMBER = "5548996539440"; // Reemplaza con tu número de WhatsApp
+  const WHATSAPP_NUMBER = "5547997023788"; // Reemplaza con tu número de WhatsApp
   const WHATSAPP_MESSAGE = "Olá! Gostaria de solicitar um orçamento para um sistema de energia solar.";
   
   const [contactForm, setContactForm] = useState({
@@ -277,7 +277,7 @@ const App = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Ligue agora</p>
-                    <p className="font-bold text-xl">+55 (48) 9653-9440</p>
+                    <p className="font-bold text-xl">+55 (47) 99702-3788</p>
                   </div>
                 </div>
                 
