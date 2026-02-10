@@ -14,16 +14,20 @@ const App = () => {
   const COMPANY_NAME = "ArSol";
   const WHATSAPP_NUMBER = "5547997023788"; // Reemplaza con tu número de WhatsApp
   const WHATSAPP_MESSAGE = "Olá! Gostaria de solicitar um orçamento para um sistema de energia solar.";
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   
   const [contactForm, setContactForm] = useState({
     name: '',
     phone: '',
     email: '',
     billAmount: '',
-    address: ''
+    address: '',
+    lat: null,
+    lng: null
   });
   
   const addressInputRef = useRef(null);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     const initAutocomplete = () => {
@@ -36,8 +40,13 @@ const App = () => {
 
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
-          if (place.formatted_address) {
-            setContactForm(prev => ({ ...prev, address: place.formatted_address }));
+          if (place.geometry) {
+            setContactForm(prev => ({ 
+              ...prev, 
+              address: place.formatted_address,
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            }));
           }
         });
       }
@@ -56,18 +65,52 @@ const App = () => {
     }
   }, []);
 
+  useEffect(() => {
+    // Este efecto se ejecuta cuando las coordenadas cambian para renderizar el mapa
+    if (contactForm.lat && contactForm.lng && mapRef.current) {
+      const map = new window.google.maps.Map(mapRef.current, {
+        center: { lat: contactForm.lat, lng: contactForm.lng },
+        zoom: 20, // Zoom cercano para ver la propiedad
+        mapTypeId: 'satellite', // Vista satelital
+        disableDefaultUI: true, // Interfaz limpia
+        gestureHandling: 'greedy' // Permite hacer zoom y mover con un dedo
+      });
+      new window.google.maps.Marker({
+        position: { lat: contactForm.lat, lng: contactForm.lng },
+        map: map,
+      });
+    }
+  }, [contactForm.lat, contactForm.lng]);
+
   const handleContactChange = (e) => {
     const { name, value } = e.target;
-    setContactForm(prev => ({ ...prev, [name]: value }));
+    if (name === 'address') {
+      // Si el usuario escribe manualmente, limpiamos las coordenadas para ocultar el mapa
+      setContactForm(prev => ({ ...prev, address: value, lat: null, lng: null }));
+    } else {
+      setContactForm(prev => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleWhatsAppRedirect = (e) => {
+  const handleWhatsAppRedirect = async (e) => {
     e.preventDefault();
-    const { name, phone, email, billAmount, address } = contactForm;
+    const { name, phone, email, billAmount, address, lat, lng } = contactForm;
     
     if (!name || !phone || !email || !billAmount) return;
 
-    const message = `Olá ArSol! Meu nome é ${name}. \n\nGostaria de solicitar um orçamento.\n⚡ Consumo aproximado: ${billAmount}\n📍 Endereço: ${address}\n📱 Telefone: ${phone}\n📧 E-mail: ${email}`;
+    // 1. Enviar datos al Backend (CRM + Base de Datos)
+    try {
+      await fetch(`${API_URL}/api/landing/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactForm)
+      });
+    } catch (error) {
+      console.error("Error enviando datos al servidor:", error);
+    }
+
+    const mapsLink = lat && lng ? `\n🗺️ Ver no mapa: https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : '';
+    const message = `Olá ArSol! Meu nome é ${name}. \n\nGostaria de solicitar um orçamento.\n⚡ Consumo aproximado: ${billAmount}\n📍 Endereço: ${address}${mapsLink}\n📱 Telefone: ${phone}\n📧 E-mail: ${email}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -350,6 +393,12 @@ const App = () => {
                       />
                       <MapPin className="absolute left-3 top-3.5 text-gray-500 h-5 w-5" />
                     </div>
+                    {contactForm.lat && contactForm.lng && (
+                      <div className="mt-4 h-64 w-full rounded-lg border border-white/20 shadow-lg animate-fade-in-up overflow-hidden">
+                        <div ref={mapRef} className="w-full h-full" />
+                        <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">Vista Satelital</div>
+                      </div>
+                    )}
                   </div>
 
                   <div>

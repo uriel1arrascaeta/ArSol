@@ -6,6 +6,7 @@ import time
 import os
 import json
 import google.generativeai as genai
+import requests
 
 app = Flask(__name__)
 CORS(app)  # Permite que el Frontend (React) se comunique con este Backend
@@ -262,6 +263,52 @@ def delete_activity(id):
     db.session.delete(activity)
     db.session.commit()
     return jsonify({"success": True, "message": "Cliente eliminado"}), 200
+
+# --- Ruta para Landing Page (CRM + DB) ---
+
+
+@app.route('/api/landing/submit', methods=['POST'])
+def submit_lead():
+    data = request.json
+
+    # 1. Guardar en Base de Datos Local (para que aparezca en el Dashboard)
+    try:
+        # Formatear fecha actual ej: "06 Feb 2026"
+        current_date = datetime.now().strftime("%d %b %Y")
+
+        new_activity = Activity(
+            name=data.get('name', 'Cliente Web'),
+            email=data.get('email', ''),
+            status="Pendiente",
+            date=current_date,
+            amount=data.get('billAmount', 'N/A')
+        )
+        db.session.add(new_activity)
+        db.session.commit()
+    except Exception as e:
+        print(f"Error guardando en DB local: {e}")
+
+    # 2. Enviar al CRM Externo
+    # --- CONFIGURACIÓN DEL CRM I.Sales ---
+    isales_url = "https://app.isales.company/formulario/cliente"
+    isales_fid = "UFD158TR951"  # Reemplaza con el ID de tu formulario en I.Sales
+    isales_e = "HJK1231ISAL567"  # Reemplaza con tu código de identificación de empresa
+
+    try:
+        isales_payload = {
+            'e': isales_e,
+            'fid': isales_fid,
+            'redirect': '1',
+            'nome': data.get('name', ''),
+            'email': data.get('email', ''),
+            'telefone': data.get('phone', ''),
+            'valor_energia': data.get('billAmount', '')}
+
+        print(f"Datos recibidos para CRM: {data}")
+    except Exception as e:
+        print(f"Error enviando a CRM: {e}")
+
+    return jsonify({"success": True}), 200
 
 # --- Rutas de Citas (Appointments) ---
 
