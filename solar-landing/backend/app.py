@@ -296,23 +296,10 @@ def submit_lead():
     isales_e = os.environ.get('ISALES_E', "HJK1231ISAL567")
 
     try:
-        isales_payload = {
-            'e': isales_e,
-            'fid': isales_fid,
-            'redirect': '1',
-            'teste': 'Sim',
-            'nome': data.get('name', ''),
-            'email': data.get('email', ''),
-            'telefone': data.get('phone', ''),
-            'valor_energia': data.get('billAmount', ''),
-            'cidade': data.get('address', '')
-        }
-
-        # Enviar solicitud POST como form-data (application/x-www-form-urlencoded)
-        response = requests.post(isales_url, data=isales_payload)
-        print(f"Respuesta CRM: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"Error enviando a CRM: {e}")
+        # Usar multipart/form-data (requerido por curl --form)
+        # Usamos 'files' con tuplas (None, valor) para campos de texto
+        o 'mail'il', '',
+            ee'r_ergia' lsPssea CRM: {e}")
 
     return jsonify({"success": True}), 200
 
@@ -321,10 +308,8 @@ def submit_lead():
 
 @app.route('/api/appointments', methods=['GET'])
 def get_appointments():
-    appointments = Appointment.query.all()
-    data = []
-    for appt in appointments:
-        data.append({
+    appoi
+
             "id": appt.id,
             "name": appt.name,
             "email": appt.email,
