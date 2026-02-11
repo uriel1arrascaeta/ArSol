@@ -291,8 +291,9 @@ def submit_lead():
     # 2. Enviar al CRM Externo
     # --- CONFIGURACIÓN DEL CRM I.Sales ---
     isales_url = "https://app.isales.company/formulario/cliente"
-    isales_fid = "UFD158TR951"  # Reemplaza con el ID de tu formulario en I.Sales
-    isales_e = "HJK1231ISAL567"  # Reemplaza con tu código de identificación de empresa
+    # Obtener credenciales de variables de entorno (Configurar en Render)
+    isales_fid = os.environ.get('ISALES_FID', "UFD158TR951")
+    isales_e = os.environ.get('ISALES_E', "HJK1231ISAL567")
 
     try:
         isales_payload = {
