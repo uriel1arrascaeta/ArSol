@@ -323,8 +323,10 @@ def submit_lead():
 
 @app.route('/api/appointments', methods=['GET'])
 def get_appointments():
-    appoi
-
+    appointments = Appointment.query.all()
+    data = []
+    for appt in appointments:
+        data.append({
             "id": appt.id,
             "name": appt.name,
             "email": appt.email,
