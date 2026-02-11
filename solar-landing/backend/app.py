@@ -9,7 +9,17 @@ import google.generativeai as genai
 import requests
 
 app = Flask(__name__)
-CORS(app)  # Permite que el Frontend (React) se comunique con este Backend
+
+# --- Configuración de CORS (Permisos de Conexión) ---
+# Lista de dominios que tienen permiso para conectarse a este backend.
+origins = [
+    "http://localhost:5173",  # Para desarrollo local con Vite
+    "https://www.arsolsolar.com",  # Tu dominio de producción
+    # Dominio principal de Vercel
+    "https://solar-landing-git-main-uriels-projects-78a30a8d.vercel.app"
+]
+# Es más seguro especificar los orígenes que permitir todos con `CORS(app)`.
+CORS(app, origins=origins, supports_credentials=True)
 
 # --- Configuración de Base de Datos (PostgreSQL para Render) ---
 # Render proporciona la URL de la base de datos en la variable de entorno DATABASE_URL.
