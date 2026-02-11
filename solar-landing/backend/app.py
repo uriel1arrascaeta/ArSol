@@ -298,8 +298,23 @@ def submit_lead():
     try:
         # Usar multipart/form-data (requerido por curl --form)
         # Usamos 'files' con tuplas (None, valor) para campos de texto
-        o 'mail'il', '',
-            ee'r_ergia' lsPssea CRM: {e}")
+        isales_payload = {
+            'e': (None, isales_e),
+            'fid': (None, isales_fid),
+            'redirect': (None, '1'),
+            'teste': (None, 'Sim'),
+            'nome': (None, data.get('name', '')),
+            'email': (None, data.get('email', '')),
+            'telefone': (None, data.get('phone', '')),
+            'valor_energia': (None, data.get('billAmount', '')),
+            'cidade': (None, data.get('address', ''))
+        }
+
+        # Enviar solicitud POST
+        response = requests.post(isales_url, files=isales_payload)
+        print(f"Respuesta CRM: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error enviando a CRM: {e}")
 
     return jsonify({"success": True}), 200
 
