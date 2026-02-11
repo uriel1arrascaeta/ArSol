@@ -13,13 +13,14 @@ app = Flask(__name__)
 # --- Configuración de CORS (Permisos de Conexión) ---
 # Lista de dominios que tienen permiso para conectarse a este backend.
 origins = [
-    "http://localhost:5173",  # Para desarrollo local con Vite
-    "https://www.arsolsolar.com",  # Tu dominio de producción
-    # Dominio principal de Vercel
-    "https://solar-landing-git-main-uriels-projects-78a30a8d.vercel.app"
+    "http://localhost:5173",
+    "https://www.arsolsolar.com",
+    "https://solar-landing-git-main-uriels-projects-78a30a8d.vercel.app",
+    "https://arsol.onrender.com"
 ]
 # Es más seguro especificar los orígenes que permitir todos con `CORS(app)`.
-CORS(app, origins=origins, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": origins}},
+     supports_credentials=True)
 
 # --- Configuración de Base de Datos (PostgreSQL para Render) ---
 # Render proporciona la URL de la base de datos en la variable de entorno DATABASE_URL.
