@@ -313,7 +313,7 @@ def submit_lead():
             'e': (None, isales_e),
             'fid': (None, isales_fid),
             'redirect': (None, '1'),
-            'teste': (None, 'Sim'),
+            # 'teste': (None, 'Sim'),
             'nome': (None, data.get('name', '')),
             'email': (None, data.get('email', '')),
             'telefone': (None, data.get('phone', '')),
