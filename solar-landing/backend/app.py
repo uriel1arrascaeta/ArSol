@@ -7,6 +7,7 @@ import os
 import json
 import google.generativeai as genai
 import requests
+import re
 
 app = Flask(__name__)
 
@@ -282,6 +283,10 @@ def delete_activity(id):
 def submit_lead():
     data = request.json
 
+    # --- Limpieza de Datos ---
+    # Eliminar todo lo que no sea número del teléfono (paréntesis, guiones, espacios)
+    clean_phone = re.sub(r'\D', '', data.get('phone', ''))
+
     # 1. Guardar en Base de Datos Local (para que aparezca en el Dashboard)
     try:
         # Formatear fecha actual ej: "06 Feb 2026"
@@ -316,7 +321,7 @@ def submit_lead():
             # 'teste': (None, 'Sim'),
             'nome': (None, data.get('name', '')),
             'email': (None, data.get('email', '')),
-            'telefone': (None, data.get('phone', '')),
+            'telefone': (None, clean_phone),
             'valor_energia': (None, data.get('billAmount', '')),
             'cidade': (None, data.get('address', ''))
         }
