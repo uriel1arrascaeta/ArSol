@@ -14,7 +14,7 @@ const App = () => {
   const COMPANY_NAME = "ArSol";
   const WHATSAPP_NUMBER = "5547997023788"; // Reemplaza con tu número de WhatsApp
   const WHATSAPP_MESSAGE = "Olá! Gostaria de solicitar um orçamento para um sistema de energia solar.";
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://arsol.onrender.com';
   
   const [contactForm, setContactForm] = useState({
     name: '',

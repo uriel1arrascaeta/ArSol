@@ -287,6 +287,22 @@ def submit_lead():
     # Eliminar todo lo que no sea número del teléfono (paréntesis, guiones, espacios)
     clean_phone = re.sub(r'\D', '', data.get('phone', ''))
 
+    # Limpiar valor de factura para el CRM (convertir texto a número simple)
+    def clean_bill_amount(amount_str):
+        if not amount_str:
+            return ""
+        if "Menos de R$ 1.500" in amount_str:
+            return "1500"
+        if "R$ 1.500 - R$ 3.000" in amount_str:
+            return "3000"
+        if "R$ 3.000 - R$ 5.000" in amount_str:
+            return "5000"
+        if "Mais de R$ 5.000" in amount_str:
+            return "5000"
+        return amount_str
+
+    clean_amount = clean_bill_amount(data.get('billAmount', ''))
+
     # 1. Guardar en Base de Datos Local (para que aparezca en el Dashboard)
     try:
         # Formatear fecha actual ej: "06 Feb 2026"
@@ -312,22 +328,25 @@ def submit_lead():
     isales_e = os.environ.get('ISALES_E', "HJK1231ISAL567")
 
     try:
-        # Usar multipart/form-data (requerido por curl --form)
-        # Usamos 'files' con tuplas (None, valor) para campos de texto
+        # Usar application/x-www-form-urlencoded (Estándar para formularios web)
         isales_payload = {
-            'e': (None, isales_e),
-            'fid': (None, isales_fid),
-            'redirect': (None, '1'),
-            # 'teste': (None, 'Sim'),
-            'nome': (None, data.get('name', '')),
-            'email': (None, data.get('email', '')),
-            'telefone': (None, clean_phone),
-            'valor_energia': (None, data.get('billAmount', '')),
-            'cidade': (None, data.get('address', ''))
+            'e': isales_e,
+            'fid': isales_fid,
+            'redirect': '1',
+            'nome': data.get('name', ''),
+            'email': data.get('email', ''),
+            'telefone': clean_phone,
+            'valor_energia': clean_amount,
+            'cidade': data.get('address', '')
+        }
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
 
         # Enviar solicitud POST
-        response = requests.post(isales_url, files=isales_payload)
+        response = requests.post(
+            isales_url, data=isales_payload, headers=headers)
         print(f"Respuesta CRM: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Error enviando a CRM: {e}")
