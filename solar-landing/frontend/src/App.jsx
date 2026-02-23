@@ -273,9 +273,11 @@ const App = () => {
                     <input type="text" name="valor_energia" id="valor_energia" required className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
                   </div>
 
-                  <button 
-                      type="submit"
-                      Enviar e Receber Orçamento
+                  <button
+                    type="submit"
+                    className="w-full bg-[#FF7A00] text-white font-bold py-3 rounded-lg hover:bg-[#E66E00] transition-colors"
+                  >
+                    Enviar e Receber Orçamento
                   </button>
                 </form>
             </div>
