@@ -328,16 +328,17 @@ def submit_lead():
     isales_e = os.environ.get('ISALES_E', "HJK1231ISAL567")
 
     try:
-        # Usar application/x-www-form-urlencoded (Estándar para formularios web)
+        # Usar multipart/form-data (Más compatible con I.Sales y sistemas legacy)
+        # Se usa la estructura (None, valor) para enviar campos de texto
         isales_payload = {
-            'e': isales_e,
-            'fid': isales_fid,
-            'redirect': '1',
-            'nome': data.get('name', ''),
-            'email': data.get('email', ''),
-            'telefone': clean_phone,
-            'valor_energia': clean_amount,
-            'cidade': data.get('address', '')
+            'e': (None, isales_e),
+            'fid': (None, isales_fid),
+            'redirect': (None, '1'),
+            'nome': (None, data.get('name', '')),
+            'email': (None, data.get('email', '')),
+            'telefone': (None, clean_phone),
+            'valor_energia': (None, clean_amount),
+            'cidade': (None, data.get('address', ''))
         }
 
         headers = {
@@ -346,7 +347,7 @@ def submit_lead():
 
         # Enviar solicitud POST
         response = requests.post(
-            isales_url, data=isales_payload, headers=headers)
+            isales_url, files=isales_payload, headers=headers)
         print(f"Respuesta CRM: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Error enviando a CRM: {e}")

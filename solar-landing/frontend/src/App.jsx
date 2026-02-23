@@ -92,26 +92,23 @@ const App = () => {
     }
   };
 
-  const handleWhatsAppRedirect = async (e) => {
+  const handleWhatsAppRedirect = (e) => {
     e.preventDefault();
     const { name, phone, email, billAmount, address, lat, lng } = contactForm;
     
     if (!name || !phone || !email || !billAmount) return;
 
-    // 1. Enviar datos al Backend (CRM + Base de Datos)
-    try {
-      await fetch(`${API_URL}/api/landing/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(contactForm)
-      });
-    } catch (error) {
-      console.error("Error enviando datos al servidor:", error);
-    }
-
+    // 1. Abrir WhatsApp INMEDIATAMENTE (Sin esperar al servidor)
     const mapsLink = lat && lng ? `\n🗺️ Ver no mapa: https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : '';
     const message = `Olá ArSol! Meu nome é ${name}. \n\nGostaria de solicitar um orçamento.\n⚡ Consumo aproximado: ${billAmount}\n📍 Endereço: ${address}${mapsLink}\n📱 Telefone: ${phone}\n📧 E-mail: ${email}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+
+    // 2. Enviar datos al Backend en segundo plano
+    fetch(`${API_URL}/api/landing/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(contactForm)
+    }).catch(error => console.error("Error enviando datos al servidor:", error));
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
