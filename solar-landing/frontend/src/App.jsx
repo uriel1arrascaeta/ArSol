@@ -8,6 +8,13 @@ import logoArsol from './logoArsol.png';
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Inicializar estado verificando localStorage para persistir la sesión
+  const [formData, setFormData] = useState({
+    nome: '',
+    telefone: '',
+    email: '',
+    cidade: '',
+    valor_energia: ''
+  });
   const [currentView, setCurrentView] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true' ? 'dashboard' : 'landing';
   });
@@ -16,6 +23,39 @@ const App = () => {
   const WHATSAPP_MESSAGE = "Olá! Gostaria de solicitar um orçamento para um sistema de energia solar.";
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  const handleFormChange = (e) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+
+    // También envía los datos al backend para guardarlos en la base de datos y el CRM.
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    fetch(`${API_URL}/api/landing/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: formData.nome,
+            phone: formData.telefone,
+            email: formData.email,
+            address: formData.cidade,
+            billAmount: formData.valor_energia
+        })
+    }).catch(err => console.error("Error al enviar al backend", err));
+
+    // Construye el mensaje de WhatsApp
+    const message = `Olá! Gostaria de solicitar um orçamento.
+Meu nome é ${formData.nome}.
+Meu telefone é ${formData.telefone}.
+Meu e-mail é ${formData.email}.
+Moro em ${formData.cidade}.
+Minha fatura de energia é em torno de ${formData.valor_energia}.`;
+
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handleLogin = () => {
     localStorage.setItem('isAuthenticated', 'true');
@@ -240,37 +280,31 @@ const App = () => {
             <div className="bg-white/10 p-8 rounded-2xl border border-white/10 shadow-lg">
                 <h3 className="text-2xl font-bold text-white mb-6 text-center">Solicite seu Estudo Gratuito</h3>
                 {/* Este es el formulario oficial de I.Sales, adaptado a JSX y con el estilo de la página */}
-                <form action="https://app.isales.company/formulario/cliente" method="POST" className="space-y-4">
-                  {/* Campos ocultos requeridos por I.Sales */}
-                  <input type="hidden" name="e" id="e" value="HJK1231ISAL567" />
-                  <input type="hidden" name="fid" id="fid" value="UFD158TR951" />
-                  {/* El valor "1" indica a I.Sales que no redirija si se usa AJAX, pero aquí hacemos un envío normal */}
-                  <input type="hidden" name="redirect" id="redirect" value="1" />
-
+                <form onSubmit={handleFormSubmit} className="space-y-4">
                   <div>
                     <label htmlFor="nome" className="block text-sm font-medium text-gray-300 mb-1">Nome Completo</label>
-                    <input type="text" name="nome" id="nome" required className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
+                    <input type="text" name="nome" id="nome" required value={formData.nome} onChange={handleFormChange} className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="telefone" className="block text-sm font-medium text-gray-300 mb-1">Telefone/Celular</label>
-                      <input type="text" name="telefone" id="telefone" required className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
+                      <input type="text" name="telefone" id="telefone" required value={formData.telefone} onChange={handleFormChange} className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
                     </div>
                     <div>
                       <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
-                      <input type="email" name="email" id="email" required className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
+                      <input type="email" name="email" id="email" required value={formData.email} onChange={handleFormChange} className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
                     </div>
                   </div>
                   
                   <div>
                     <label htmlFor="cidade" className="block text-sm font-medium text-gray-300 mb-1">Cidade</label>
-                    <input type="text" name="cidade" id="cidade" required className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
+                    <input type="text" name="cidade" id="cidade" required value={formData.cidade} onChange={handleFormChange} className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
                   </div>
 
                   <div>
                     <label htmlFor="valor_energia" className="block text-sm font-medium text-gray-300 mb-1">Média de valor da sua fatura</label>
-                    <input type="text" name="valor_energia" id="valor_energia" required className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
+                    <input type="text" name="valor_energia" id="valor_energia" required value={formData.valor_energia} onChange={handleFormChange} className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF7A00] outline-none transition-all" />
                   </div>
 
                   <button
