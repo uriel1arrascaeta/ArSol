@@ -6,6 +6,7 @@ import time
 import os
 import json
 import google.generativeai as genai
+from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 import re
 
@@ -56,7 +57,7 @@ class Activity(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     status = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.Date, nullable=False)  # Cambiado a db.Date
     amount = db.Column(db.String(50), nullable=False)
 
 
@@ -64,7 +65,7 @@ class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False)
-    date = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.Date, nullable=False)  # Cambiado a db.Date
     time = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), default="Pendiente")
 
@@ -76,7 +77,9 @@ def init_db():
         db.create_all()
         # Crear usuario admin si no existe
         if not User.query.filter_by(email='admin@arsol.com').first():
-            admin = User(email='admin@arsol.com', password='admin123',
+            hashed_password = generate_password_hash(
+                'admin123', method='pbkdf2:sha256')
+            admin = User(email='admin@arsol.com', password=hashed_password,
                          name='Huriel', role='Super Admin')
             db.session.add(admin)
 
@@ -84,12 +87,12 @@ def init_db():
             activities = [
                 Activity(name="Juan Pérez", email="juan@gmail.com",
                          status="Pendiente", date="21 Ene 2026", amount="$ 3,500"),
-                Activity(name="Tech Solutions SA", email="contacto@techsol.com",
-                         status="Completado", date="20 Ene 2026", amount="$ 12,000"),
-                Activity(name="Maria Garcia", email="mgarcia@outlook.com",
-                         status="En Proceso", date="19 Ene 2026", amount="$ 4,200"),
-                Activity(name="Hotel Sol y Mar", email="admin@solymar.com",
-                         status="Pendiente", date="18 Ene 2026", amount="$ 25,000"),
+                Activity(name="Tech Solutions SA", email="contacto@techsol.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
+                         status="Completado", date=datetime(2026, 1, 20).date(), amount="$ 12,000"),
+                Activity(name="Maria Garcia", email="mgarcia@outlook.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
+                         status="En Proceso", date=datetime(2026, 1, 19).date(), amount="$ 4,200"),
+                Activity(name="Hotel Sol y Mar", email="admin@solymar.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
+                         status="Pendiente", date=datetime(2026, 1, 18).date(), amount="$ 25,000"),
             ]
 
             # Crear citas de ejemplo
@@ -126,7 +129,7 @@ def login():
     # Buscar usuario en la base de datos
     user = User.query.filter_by(email=email).first()
 
-    if user and user.password == password:
+    if user and check_password_hash(user.password, password):
         return jsonify({
             "success": True,
             "token": "fake-jwt-token-123",
@@ -142,32 +145,23 @@ def get_dashboard_data():
     activities_query = Activity.query.all()
     activities_data = []
 
-    # Configuración para cálculos de fechas
-    today = datetime.now()
+    today = datetime.now().date()  # Usar solo la fecha
     current_month_income = 0
     prev_month_income = 0
 
-    # Mapa de meses en español para parsear las fechas
-    months_map = {
-        "Ene": 1, "Feb": 2, "Mar": 3, "Abr": 4, "May": 5, "Jun": 6,
-        "Jul": 7, "Ago": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dic": 12
-    }
-
-    # Determinar mes y año anterior
-    if today.month == 1:
-        prev_month = 12
-        prev_year = today.year - 1
-    else:
-        prev_month = today.month - 1
-        prev_year = today.year
+    # Calcular el primer día del mes actual y del mes anterior
+    first_day_current_month = today.replace(day=1)
+    first_day_prev_month = (first_day_current_month -
+                            timedelta(days=1)).replace(day=1)
 
     for act in activities_query:
         activities_data.append({
             "id": act.id,
             "name": act.name,
             "email": act.email,
-            "status": act.status,
-            "date": act.date,
+            "status": act.status,  # Convertir la fecha a string para el frontend
+            # Formatear para el frontend
+            "date": act.date.strftime("%d %b %Y"),
             "amount": act.amount
         })
 
@@ -178,26 +172,16 @@ def get_dashboard_data():
         except ValueError:
             clean_amount = 0
 
-        # Parsear fecha y sumar a mes correspondiente
-        try:
-            # Formato esperado: "21 Ene 2026"
-            parts = act.date.replace('.', '').split()
-            if len(parts) >= 3:
-                act_day = int(parts[0])
-                act_month_str = parts[1].capitalize()
-                act_year = int(parts[2])
-
-                act_month_num = months_map.get(act_month_str)
-
-                if act_month_num:
-                    # Verificar si es mes actual
-                    if act_year == today.year and act_month_num == today.month:
-                        current_month_income += clean_amount
-                    # Verificar si es mes anterior
-                    elif act_year == prev_year and act_month_num == prev_month:
-                        prev_month_income += clean_amount
-        except Exception as e:
-            print(f"Error calculando fecha para actividad {act.id}: {e}")
+        # Sumar a mes correspondiente si la fecha es un objeto Date
+        if isinstance(act.date, datetime):
+            act_date = act.date.date()  # Asegurarse de que es solo la fecha
+            if act_date >= first_day_current_month and act_date < (first_day_current_month + timedelta(days=32)).replace(day=1):
+                current_month_income += clean_amount
+            elif act_date >= first_day_prev_month and act_date < (first_day_prev_month + timedelta(days=32)).replace(day=1):
+                prev_month_income += clean_amount
+        else:
+            print(
+                f"Advertencia: La fecha de la actividad {act.id} no es un objeto datetime.date: {act.date}")
 
     # --- Cálculos de Tendencia ---
     if prev_month_income > 0:
@@ -306,13 +290,13 @@ def submit_lead():
     # 1. Guardar en Base de Datos Local (para que aparezca en el Dashboard)
     try:
         # Formatear fecha actual ej: "06 Feb 2026"
-        current_date = datetime.now().strftime("%d %b %Y")
+        current_date = datetime.now().date()  # Guardar como objeto Date
 
         new_activity = Activity(
             name=data.get('name', 'Cliente Web'),
             email=data.get('email', ''),
             status="Pendiente",
-            date=current_date,
+            date=current_date,  # Asignar el objeto Date
             amount=data.get('billAmount', 'N/A')
         )
         db.session.add(new_activity)
@@ -363,7 +347,7 @@ def get_appointments():
     data = []
     for appt in appointments:
         data.append({
-            "id": appt.id,
+            "id": appt.id,  # Convertir la fecha a string para el frontend
             "name": appt.name,
             "email": appt.email,
             "date": appt.date,
@@ -377,7 +361,8 @@ def get_appointments():
 def create_appointment():
     data = request.json
     new_appt = Appointment(
-        name=data['name'], email=data['email'], date=data['date'], time=data['time'])
+        # Parsear fecha ISO
+        name=data['name'], email=data['email'], date=datetime.strptime(data['date'], '%Y-%m-%d').date(), time=data['time'])
     db.session.add(new_appt)
     db.session.commit()
     return jsonify({"success": True, "message": "Cita agendada exitosamente"}), 201
@@ -388,6 +373,7 @@ def update_appointment(id):
     appt = Appointment.query.get_or_404(id)
     data = request.json
     appt.name = data.get('name', appt.name)
+    # Asegurarse de que la fecha se parsea si viene como string
     appt.email = data.get('email', appt.email)
     appt.date = data.get('date', appt.date)
     appt.time = data.get('time', appt.time)
@@ -418,10 +404,12 @@ def update_password():
     if not user:
         return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
 
-    if user.password != current_password:
+    if not check_password_hash(user.password, current_password):
         return jsonify({"success": False, "message": "La contraseña actual es incorrecta"}), 400
 
-    user.password = new_password
+    # Guardar la nueva contraseña hasheada
+    user.password = generate_password_hash(
+        new_password, method='pbkdf2:sha256')
     db.session.commit()
     return jsonify({"success": True, "message": "Contraseña actualizada con éxito"}), 200
 
