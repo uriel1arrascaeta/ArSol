@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from datetime import datetime
 import time
 import os
@@ -37,6 +38,11 @@ if database_url and database_url.startswith("postgres://"):
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configuración JWT
+app.config["JWT_SECRET_KEY"] = os.environ.get(
+    'JWT_SECRET_KEY', 'super-secret-change-me-in-prod')
+jwt = JWTManager(app)
 
 db = SQLAlchemy(app)
 
@@ -130,9 +136,10 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     if user and check_password_hash(user.password, password):
+        access_token = create_access_token(identity=user.email)
         return jsonify({
             "success": True,
-            "token": "fake-jwt-token-123",
+            "token": access_token,
             "user": {"name": user.name, "role": user.role}
         }), 200
     else:
@@ -140,6 +147,7 @@ def login():
 
 
 @app.route('/api/dashboard', methods=['GET'])
+@jwt_required()
 def get_dashboard_data():
     # Obtener actividades de la base de datos
     activities_query = Activity.query.all()
@@ -224,6 +232,7 @@ def get_dashboard_data():
 
 
 @app.route('/api/activities', methods=['POST'])
+@jwt_required()
 def add_activity():
     data = request.json
     new_activity = Activity(
@@ -239,6 +248,7 @@ def add_activity():
 
 
 @app.route('/api/activities/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_activity(id):
     activity = Activity.query.get_or_404(id)
     data = request.json
@@ -254,6 +264,7 @@ def update_activity(id):
 
 
 @app.route('/api/activities/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_activity(id):
     activity = Activity.query.get_or_404(id)
     db.session.delete(activity)
@@ -393,6 +404,7 @@ def delete_appointment(id):
 
 
 @app.route('/api/user/password', methods=['PUT'])
+@jwt_required()
 def update_password():
     data = request.json
     email = data.get('email')  # Asumimos que el email del admin es conocido
