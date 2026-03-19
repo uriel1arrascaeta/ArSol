@@ -1,8 +1,0 @@
-Flask
-Flask-Cors
-Flask-SQLAlchemy
-Flask-JWT-Extended
-google-generativeai
-requests
-psycopg2-binary
-gunicorn
