@@ -65,6 +65,7 @@ Minha fatura de energia é em torno de ${formData.valor_energia}.`;
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('token');
     setCurrentView('landing');
   };
 
@@ -145,7 +146,7 @@ Minha fatura de energia é em torno de ${formData.valor_energia}.`;
               </span>
             </h1>
             <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto md:mx-0 leading-relaxed">
-              Transforme sua casa ou empresa com a <strong>{COMPANY_NAME}</strong>. Reduza sua conta de luz em até 98% e garanta seu futuro energético.
+              Transforme sua casa ou empresa com a <strong>{COMPANY_NAME}</strong>. Reduza sua conta de luz em até 90% e garanta seu futuro energético.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
               <a href="#contacto" className="bg-[#FF7A00] text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-[#E66E00] transition-all shadow-xl hover:shadow-[#FF7A00]/40 flex items-center justify-center gap-2 group">

@@ -24,6 +24,7 @@ const AdminLogin = ({ onLogin, onBack }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        localStorage.setItem('token', data.token);
         onLogin();
       } else {
         setError(data.message || 'Credenciales incorrectas');

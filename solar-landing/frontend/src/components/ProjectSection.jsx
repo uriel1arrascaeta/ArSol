@@ -147,8 +147,10 @@ const ProjectSection = ({ activities, onSaveNew, onUpdateClient, onSaveProject }
     formData.append('file', file);
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/analyze-bill`, {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       const result = await response.json();

@@ -29,14 +29,21 @@ const Dashboard = ({ onLogout }) => {
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+  // Helper para peticiones autenticadas
+  const authFetch = (url, options = {}) => {
+    const token = localStorage.getItem('token');
+    const headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+    return fetch(url, { ...options, headers });
+  };
+
   const loadDashboardData = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/dashboard`);
+      const res = await authFetch(`${API_URL}/api/dashboard`);
       const data = await res.json();
       if (data.stats) setStats(data.stats);
       if (data.activities) setActivities(data.activities);
       
-      const resAppt = await fetch(`${API_URL}/api/appointments`);
+      const resAppt = await authFetch(`${API_URL}/api/appointments`);
       if (resAppt.ok) setAppointments(await resAppt.json());
     } catch (err) {
       console.error("Error cargando dashboard:", err);
@@ -100,7 +107,7 @@ const Dashboard = ({ onLogout }) => {
   const handleDelete = async (id) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este registro?')) {
       try {
-        const response = await fetch(`${API_URL}/api/activities/${id}`, { method: 'DELETE' });
+        const response = await authFetch(`${API_URL}/api/activities/${id}`, { method: 'DELETE' });
         
         if (response.ok) {
           loadDashboardData();
@@ -122,7 +129,7 @@ const Dashboard = ({ onLogout }) => {
       : `${API_URL}/api/activities`;
 
     try {
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(clientData)
@@ -145,7 +152,7 @@ const Dashboard = ({ onLogout }) => {
   const handleDeleteAppointment = async (id) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta cita?')) {
       try {
-        const response = await fetch(`${API_URL}/api/appointments/${id}`, { method: 'DELETE' });
+        const response = await authFetch(`${API_URL}/api/appointments/${id}`, { method: 'DELETE' });
         if (response.ok) loadDashboardData();
       } catch (error) {
         console.error("Error al eliminar cita:", error);
@@ -161,7 +168,7 @@ const Dashboard = ({ onLogout }) => {
       : `${API_URL}/api/appointments`;
 
     try {
-      const response = await fetch(url, {
+      const response = await authFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apptData)

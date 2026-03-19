@@ -353,6 +353,7 @@ def submit_lead():
 
 
 @app.route('/api/appointments', methods=['GET'])
+@jwt_required()
 def get_appointments():
     appointments = Appointment.query.all()
     data = []
@@ -369,6 +370,7 @@ def get_appointments():
 
 
 @app.route('/api/appointments', methods=['POST'])
+@jwt_required()
 def create_appointment():
     data = request.json
     new_appt = Appointment(
@@ -380,6 +382,7 @@ def create_appointment():
 
 
 @app.route('/api/appointments/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_appointment(id):
     appt = Appointment.query.get_or_404(id)
     data = request.json
@@ -394,6 +397,7 @@ def update_appointment(id):
 
 
 @app.route('/api/appointments/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_appointment(id):
     appt = Appointment.query.get_or_404(id)
     db.session.delete(appt)
@@ -429,6 +433,7 @@ def update_password():
 
 
 @app.route('/api/analyze-bill', methods=['POST'])
+@jwt_required()
 def analyze_bill():
     if 'file' not in request.files:
         return jsonify({"success": False, "message": "No se envió ningún archivo"}), 400
