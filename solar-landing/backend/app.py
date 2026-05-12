@@ -2,14 +2,18 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from datetime import datetime
+from datetime import datetime, timedelta, date
 import time
 import os
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -30,7 +34,12 @@ CORS(app, resources={r"/api/*": {"origins": origins}},
 database_url = os.environ.get('DATABASE_URL')
 
 if not database_url:
-    database_url = 'postgresql://postgres:postgres123@127.0.0.1:5432/arsol-db'
+    db_user = os.environ.get('DB_USER', 'postgres')
+    db_pass = os.environ.get('DB_PASS', 'postgres123')
+    db_host = os.environ.get('DB_HOST', '127.0.0.1')
+    db_port = os.environ.get('DB_PORT', '5432')
+    db_name = os.environ.get('DB_NAME', 'arsol-db')
+    database_url = f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}'
 
 if database_url and database_url.startswith("postgres://"):
     # SQLAlchemy prefiere 'postgresql://' en lugar de 'postgres://'
@@ -81,30 +90,35 @@ class Appointment(db.Model):
 def init_db():
     with app.app_context():
         db.create_all()
-        # Crear usuario admin si no existe
-        if not User.query.filter_by(email='admin@arsol.com').first():
-            hashed_password = generate_password_hash(
-                'admin123', method='pbkdf2:sha256')
+        # Buscar el usuario administrador
+        admin = User.query.filter_by(email='admin@arsol.com').first()
+        hashed_password = generate_password_hash(
+            'admin123', method='pbkdf2:sha256')
+
+        if not admin:
             admin = User(email='admin@arsol.com', password=hashed_password,
                          name='Huriel', role='Super Admin')
             db.session.add(admin)
+        else:
+            # Forzar el restablecimiento de la contraseña a 'admin123'
+            admin.password = hashed_password
 
             # Crear actividades de ejemplo iniciales
             activities = [
                 Activity(name="Juan Pérez", email="juan@gmail.com",
-                         status="Pendiente", date="21 Ene 2026", amount="$ 3,500"),
+                         status="Pendiente", date=date(2026, 1, 21), amount="$ 3,500"),
                 Activity(name="Tech Solutions SA", email="contacto@techsol.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
-                         status="Completado", date=datetime(2026, 1, 20).date(), amount="$ 12,000"),
+                         status="Completado", date=date(2026, 1, 20), amount="$ 12,000"),
                 Activity(name="Maria Garcia", email="mgarcia@outlook.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
-                         status="En Proceso", date=datetime(2026, 1, 19).date(), amount="$ 4,200"),
+                         status="En Proceso", date=date(2026, 1, 19), amount="$ 4,200"),
                 Activity(name="Hotel Sol y Mar", email="admin@solymar.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
-                         status="Pendiente", date=datetime(2026, 1, 18).date(), amount="$ 25,000"),
+                         status="Pendiente", date=date(2026, 1, 18), amount="$ 25,000"),
             ]
 
             # Crear citas de ejemplo
             appointments = [
                 Appointment(name="Consultorio Dental", email="dental@mail.com",
-                            date="2026-02-10", time="10:00", status="Confirmada"),
+                            date=date(2026, 2, 10), time="10:00", status="Confirmada"),
             ]
             db.session.add_all(appointments)
             db.session.add_all(activities)
@@ -180,9 +194,10 @@ def get_dashboard_data():
         except ValueError:
             clean_amount = 0
 
-        # Sumar a mes correspondiente si la fecha es un objeto Date
-        if isinstance(act.date, datetime):
-            act_date = act.date.date()  # Asegurarse de que es solo la fecha
+        # Sumar a mes correspondiente verificando que sea un objeto de fecha válido
+        if isinstance(act.date, (datetime, date)):
+            act_date = act.date if isinstance(
+                act.date, date) else act.date.date()
             if act_date >= first_day_current_month and act_date < (first_day_current_month + timedelta(days=32)).replace(day=1):
                 current_month_income += clean_amount
             elif act_date >= first_day_prev_month and act_date < (first_day_prev_month + timedelta(days=32)).replace(day=1):
@@ -235,11 +250,16 @@ def get_dashboard_data():
 @jwt_required()
 def add_activity():
     data = request.json
+    # Ensure date is parsed from ISO string if provided as string
+    activity_date = data.get('date')
+    if isinstance(activity_date, str):
+        activity_date = datetime.strptime(activity_date, '%Y-%m-%d').date()
+
     new_activity = Activity(
         name=data['name'],
         email=data['email'],
         status=data['status'],
-        date=data['date'],
+        date=activity_date or datetime.now().date(),
         amount=data['amount']
     )
     db.session.add(new_activity)
@@ -253,10 +273,14 @@ def update_activity(id):
     activity = Activity.query.get_or_404(id)
     data = request.json
 
+    new_date = data.get('date')
+    if new_date and isinstance(new_date, str):
+        new_date = datetime.strptime(new_date, '%Y-%m-%d').date()
+
     activity.name = data.get('name', activity.name)
     activity.email = data.get('email', activity.email)
     activity.status = data.get('status', activity.status)
-    activity.date = data.get('date', activity.date)
+    activity.date = new_date or activity.date
     activity.amount = data.get('amount', activity.amount)
 
     db.session.commit()
@@ -323,31 +347,52 @@ def submit_lead():
     isales_e = os.environ.get('ISALES_E', "HJK1231ISAL567")
 
     try:
-        # Usar multipart/form-data (Más compatible con I.Sales y sistemas legacy)
-        # Se usa la estructura (None, valor) para enviar campos de texto
+        # Cambiamos a un payload plano para enviar como application/x-www-form-urlencoded
+        # Esto es lo que la mayoría de los formularios HTML/CRM esperan por defecto
         isales_payload = {
-            'e': (None, isales_e),
-            'fid': (None, isales_fid),
-            'redirect': (None, '1'),
-            'nome': (None, data.get('name', '')),
-            'email': (None, data.get('email', '')),
-            'telefone': (None, clean_phone),
-            'valor_energia': (None, clean_amount),
-            'cidade': (None, data.get('address', ''))
+            'e': isales_e,
+            'fid': isales_fid,
+            'redirect': '1',
+            'nome': data.get('name', ''),
+            'email': data.get('email', ''),
+            'telefone': clean_phone,
+            'valor_energia': clean_amount,
+            'cidade': data.get('address', '')
         }
 
         headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
 
-        # Enviar solicitud POST
+        # Usamos data= en lugar de files= para enviar como formulario estándar
         response = requests.post(
-            isales_url, files=isales_payload, headers=headers)
+            isales_url, data=isales_payload, headers=headers, timeout=10)
         print(f"Respuesta CRM: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"Error enviando a CRM: {e}")
 
     return jsonify({"success": True}), 200
+
+# --- Endpoint para registrar nuevos administradores ---
+
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    name = data.get('name', 'Admin User')
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"success": False, "message": "El usuario ya existe"}), 400
+
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    new_user = User(email=email, password=hashed_password,
+                    name=name, role='Admin')
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Usuario creado con éxito"}), 201
 
 # --- Rutas de Citas (Appointments) ---
 
@@ -410,12 +455,13 @@ def delete_appointment(id):
 @app.route('/api/user/password', methods=['PUT'])
 @jwt_required()
 def update_password():
+    # Secure: Get user email from the JWT token instead of request body
+    current_user_email = get_jwt_identity()
     data = request.json
-    email = data.get('email')  # Asumimos que el email del admin es conocido
     current_password = data.get('currentPassword')
     new_password = data.get('newPassword')
 
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=current_user_email).first()
 
     if not user:
         return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
@@ -443,16 +489,14 @@ def analyze_bill():
     # 1. Configuración de IA (Google Gemini)
     # NOTA: Reemplaza "TU_API_KEY_AQUI" con tu clave real si no usas variables de entorno
     api_key = os.environ.get("GEMINI_API_KEY")
-    # api_key = "#Hu44195"  # <-- Descomenta y pega tu clave aquí si sigue fallando
 
     if api_key:
         try:
-            genai.configure(api_key=api_key)
-            # Modelo rápido y eficiente
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            client = genai.Client(api_key=api_key)
 
             # Leer archivo
             image_data = file.read()
+            file.seek(0)  # Resetear puntero por si se necesita leer de nuevo
 
             # Prompt para la IA
             prompt = """
@@ -487,10 +531,14 @@ def analyze_bill():
             }
             """
 
-            response = model.generate_content([
-                {'mime_type': file.content_type, 'data': image_data},
-                prompt
-            ])
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=[
+                    types.Part.from_bytes(
+                        data=image_data, mime_type=file.content_type),
+                    prompt
+                ]
+            )
 
             # Limpiar respuesta
             text_response = response.text.replace(

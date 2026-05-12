@@ -81,19 +81,10 @@ const Dashboard = ({ onLogout }) => {
       activities.forEach(act => {
         if (act.status === 'En Proceso' || act.status === 'Pendiente') {
           try {
-            // Intentar parsear fecha formato "21 Ene 2026"
-            const parts = act.date.toLowerCase().replace('.', '').split(' ');
-            if (parts.length >= 3) {
-              const day = parseInt(parts[0]);
-              const monthStr = parts[1].substring(0, 3);
-              const year = parseInt(parts[2]);
-              
-              if (months[monthStr] !== undefined) {
-                const actDate = new Date(year, months[monthStr], day);
-                if (actDate >= today && actDate <= nextWeek) {
-                  notifs.push({ id: `act-${act.id}`, title: 'Proyecto Próximo', msg: `Instalación de ${act.name} programada para el ${act.date}`, type: 'proyecto' });
-                }
-              }
+            // Use native Date constructor which handles ISO dates correctly
+            const actDate = new Date(act.date);
+            if (!isNaN(actDate) && actDate >= today && actDate <= nextWeek) {
+              notifs.push({ id: `act-${act.id}`, title: 'Proyecto Próximo', msg: `Instalación de ${act.name} programada para el ${act.date}`, type: 'proyecto' });
             }
           } catch (e) { console.error("Error fecha notif", e); }
         }

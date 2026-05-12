@@ -21,7 +21,7 @@ const App = () => {
   const COMPANY_NAME = "ArSol";
   const WHATSAPP_NUMBER = "5547997023788"; // Reemplaza con tu número de WhatsApp
   const WHATSAPP_MESSAGE = "Olá! Gostaria de solicitar um orçamento para um sistema de energia solar.";
-  const INSTAGRAM_URL = "https://www.instagram.com/"; // Reemplaza con tu URL de Instagram
+  const INSTAGRAM_URL = "https://www.instagram.com/arsol.solar/"; // Reemplaza con tu URL de Instagram
   const WHATSAPP_URL = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -30,12 +30,12 @@ const App = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-
-    // También envía los datos al backend para guardarlos en la base de datos y el CRM.
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    fetch(`${API_URL}/api/landing/submit`, {
+    
+    try {
+      const response = await fetch(`${API_URL}/api/landing/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -45,7 +45,16 @@ const App = () => {
             address: formData.cidade,
             billAmount: formData.valor_energia
         })
-    }).catch(err => console.error("Error al enviar al backend", err));
+      });
+
+      if (response.ok) {
+        alert("Registro exitoso. Ahora puedes iniciar sesión para gestionar este lead en el Dashboard.");
+        setCurrentView('login');
+      }
+    } catch (err) {
+      console.error("Error al enviar al backend", err);
+      alert("Hubo un error al procesar tu solicitud.");
+    }
 
     // Construye el mensaje de WhatsApp
     const message = `Olá! Gostaria de solicitar um orçamento.

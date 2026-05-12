@@ -10,14 +10,14 @@ const ClientModal = ({ isOpen, onClose, onSave, client }) => {
     if (client) {
       setFormData({
         name: '', email: '', status: 'Pendiente',
-        date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
+        date: new Date().toISOString().split('T')[0],
         amount: '$ ',
         ...client
       });
     } else {
       setFormData({
         name: '', email: '', status: 'Pendiente',
-        date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
+        date: new Date().toISOString().split('T')[0],
         amount: '$ ',
       });
     }
@@ -62,8 +62,8 @@ const ClientModal = ({ isOpen, onClose, onSave, client }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-              <input required type="text" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
-                value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} placeholder="Ej: 24 Ene 2026" />
+              <input required type="date" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary outline-none"
+                value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
             </div>
           </div>
           <div>
