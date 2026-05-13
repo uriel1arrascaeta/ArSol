@@ -7,6 +7,7 @@ import time
 import os
 import json
 from google import genai
+from urllib.parse import quote_plus
 from google.genai import types
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
@@ -34,8 +35,8 @@ CORS(app, resources={r"/api/*": {"origins": origins}},
 database_url = os.environ.get('DATABASE_URL')
 
 if not database_url:
-    db_user = os.environ.get('DB_USER', 'postgres')
-    db_pass = os.environ.get('DB_PASS', 'postgres123')
+    db_user = quote_plus(os.environ.get('DB_USER', 'postgres'))
+    db_pass = quote_plus(os.environ.get('DB_PASS', 'postgres123'))
     db_host = os.environ.get('DB_HOST', '127.0.0.1')
     db_port = os.environ.get('DB_PORT', '5432')
     db_name = os.environ.get('DB_NAME', 'arsol-db')
@@ -62,7 +63,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     # En producción usar hash!
-    password = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.Text, nullable=False)
     name = db.Column(db.String(80), nullable=False)
     role = db.Column(db.String(50), nullable=False)
 
@@ -99,31 +100,41 @@ def init_db():
             admin = User(email='admin@arsol.com', password=hashed_password,
                          name='Huriel', role='Super Admin')
             db.session.add(admin)
-        else:
-            # Forzar el restablecimiento de la contraseña a 'admin123'
-            admin.password = hashed_password
+            print("Usuario administrador creado.")
+        elif admin.password and len(admin.password) < 100:
+            try:
+                # Si el hash guardado mide menos de 100 caracteres, es muy probable
+                # que esté truncado por el error anterior. Lo corregimos una última vez.
+                admin.password = hashed_password
+                db.session.flush()
+                db.session.commit()  # Guardamos inmediatamente si funciona
+            except Exception as e:
+                db.session.rollback()  # Importante para limpiar el estado de la transacción
+                print(
+                    f"Advertencia: No se pudo actualizar el hash del administrador (la columna en BD sigue siendo de 80 caracteres): {e}")
 
-            # Crear actividades de ejemplo iniciales
+        # Crear actividades de ejemplo iniciales solo si la tabla está vacía
+        if Activity.query.count() == 0:
             activities = [
-                Activity(name="Juan Pérez", email="juan@gmail.com",
+                Activity(name="Juan Pérez ", email="juan@gmail.com",
                          status="Pendiente", date=date(2026, 1, 21), amount="$ 3,500"),
-                Activity(name="Tech Solutions SA", email="contacto@techsol.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
+                Activity(name="Tech Solutions SA", email="contacto@techsol.com",
                          status="Completado", date=date(2026, 1, 20), amount="$ 12,000"),
-                Activity(name="Maria Garcia", email="mgarcia@outlook.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
+                Activity(name="Maria Garcia", email="mgarcia@outlook.com",
                          status="En Proceso", date=date(2026, 1, 19), amount="$ 4,200"),
-                Activity(name="Hotel Sol y Mar", email="admin@solymar.com",  # Estos datos de ejemplo deberían ser actualizados a objetos Date
+                Activity(name="Hotel Sol y Mar", email="admin@solymar.com",
                          status="Pendiente", date=date(2026, 1, 18), amount="$ 25,000"),
             ]
+            db.session.add_all(activities)
 
-            # Crear citas de ejemplo
+        if Appointment.query.count() == 0:
             appointments = [
                 Appointment(name="Consultorio Dental", email="dental@mail.com",
                             date=date(2026, 2, 10), time="10:00", status="Confirmada"),
             ]
             db.session.add_all(appointments)
-            db.session.add_all(activities)
-            db.session.commit()
-            print("Base de datos inicializada con datos de prueba.")
+
+        print("Base de datos inicializada correctamente.")
 
 
 STATS = {
@@ -154,10 +165,13 @@ def login():
         return jsonify({
             "success": True,
             "token": access_token,
-            "user": {"name": user.name, "role": user.role}
+            "user": {"name": user.name, "role": user.role},
+            "message": "Bienvenido al sistema"
         }), 200
     else:
-        return jsonify({"success": False, "message": "Credenciales incorrectas"}), 401
+        # Mensaje más descriptivo para depuración
+        msg = "Contraseña incorrecta" if user else "Usuario no encontrado"
+        return jsonify({"success": False, "message": msg}), 401
 
 
 @app.route('/api/dashboard', methods=['GET'])
@@ -182,29 +196,31 @@ def get_dashboard_data():
             "name": act.name,
             "email": act.email,
             "status": act.status,  # Convertir la fecha a string para el frontend
-            # Formatear para el frontend
-            "date": act.date.strftime("%d %b %Y"),
+            "date": act.date.isoformat(),
             "amount": act.amount
         })
 
         # Limpiar monto
         try:
-            clean_amount = float(act.amount.replace(
-                '$', '').replace(',', '').strip())
-        except ValueError:
+            # Quitar símbolos de moneda y letras (R$, $, etc)
+            text = re.sub(r'[^\d,.]', '', act.amount)
+            # Detectar formato brasileño (1.234,56) vs internacional (1,234.56)
+            if ',' in text and '.' in text:
+                if text.rfind(',') > text.rfind('.'):  # Formato BR
+                    text = text.replace('.', '').replace(',', '.')
+                else:  # Formato US
+                    text = text.replace(',', '')
+            elif ',' in text:  # Solo coma (decimal BR)
+                text = text.replace(',', '.')
+            clean_amount = float(text)
+        except Exception:
             clean_amount = 0
 
         # Sumar a mes correspondiente verificando que sea un objeto de fecha válido
-        if isinstance(act.date, (datetime, date)):
-            act_date = act.date if isinstance(
-                act.date, date) else act.date.date()
-            if act_date >= first_day_current_month and act_date < (first_day_current_month + timedelta(days=32)).replace(day=1):
-                current_month_income += clean_amount
-            elif act_date >= first_day_prev_month and act_date < (first_day_prev_month + timedelta(days=32)).replace(day=1):
-                prev_month_income += clean_amount
-        else:
-            print(
-                f"Advertencia: La fecha de la actividad {act.id} no es un objeto datetime.date: {act.date}")
+        if act.date >= first_day_current_month and act.date < (first_day_current_month + timedelta(days=32)).replace(day=1):
+            current_month_income += clean_amount
+        elif act.date >= first_day_prev_month and act.date < (first_day_prev_month + timedelta(days=32)).replace(day=1):
+            prev_month_income += clean_amount
 
     # --- Cálculos de Tendencia ---
     if prev_month_income > 0:
@@ -434,7 +450,12 @@ def update_appointment(id):
     appt.name = data.get('name', appt.name)
     # Asegurarse de que la fecha se parsea si viene como string
     appt.email = data.get('email', appt.email)
-    appt.date = data.get('date', appt.date)
+
+    new_date = data.get('date')
+    if new_date and isinstance(new_date, str):
+        new_date = datetime.strptime(new_date, '%Y-%m-%d').date()
+    appt.date = new_date or appt.date
+
     appt.time = data.get('time', appt.time)
     appt.status = data.get('status', appt.status)
     db.session.commit()
@@ -573,12 +594,9 @@ def analyze_bill():
     return jsonify({"success": True, "data": mock_extracted_data}), 200
 
 
-# Ejecutar creación de tablas al iniciar la app (necesario para Render/Gunicorn)
-# Esto asegura que las tablas existan antes de recibir peticiones
-try:
-    init_db()
-except Exception as e:
-    print(f"Error al inicializar la base de datos: {e}")
-
 if __name__ == '__main__':
+    try:
+        init_db()
+    except Exception as e:
+        print(f"Error al inicializar la base de datos: {e}")
     app.run(debug=True, port=5000)

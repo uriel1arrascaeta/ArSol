@@ -16,14 +16,16 @@ const PasswordChangeForm = () => {
     }
 
     try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/user/password', {
+      const res = await fetch(`${API_URL}/api/user/password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ email: 'admin@arsol.com', currentPassword, newPassword })
+        // El backend obtiene el usuario automáticamente del token JWT
+        body: JSON.stringify({ currentPassword, newPassword })
       });
       const data = await res.json();
       setMessage({ text: data.message, type: res.ok ? 'success' : 'error' });

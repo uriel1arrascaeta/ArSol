@@ -38,13 +38,21 @@ const Dashboard = ({ onLogout }) => {
 
   const loadDashboardData = async () => {
     try {
-      const res = await authFetch(`${API_URL}/api/dashboard`);
-      const data = await res.json();
-      if (data.stats) setStats(data.stats);
-      if (data.activities) setActivities(data.activities);
+      // Cargamos ambas peticiones en paralelo para mayor velocidad
+      const [resDash, resAppt] = await Promise.all([
+        authFetch(`${API_URL}/api/dashboard`),
+        authFetch(`${API_URL}/api/appointments`)
+      ]);
+
+      if (resDash.ok) {
+        const data = await resDash.json();
+        if (data.stats) setStats(data.stats);
+        if (data.activities) setActivities(data.activities);
+      }
       
-      const resAppt = await authFetch(`${API_URL}/api/appointments`);
-      if (resAppt.ok) setAppointments(await resAppt.json());
+      if (resAppt.ok) {
+        setAppointments(await resAppt.json());
+      }
     } catch (err) {
       console.error("Error cargando dashboard:", err);
     }
@@ -53,6 +61,11 @@ const Dashboard = ({ onLogout }) => {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   // Generar notificaciones basadas en citas y fechas de proyectos
   useEffect(() => {
@@ -68,23 +81,20 @@ const Dashboard = ({ onLogout }) => {
           notifs.push({
             id: `appt-${appt.id}`,
             title: 'Nueva Cita Agendada',
-            msg: `${appt.name} solicitó una cita para el ${appt.date}`,
+            msg: `${appt.name} solicitó una cita para el ${formatDate(appt.date)}`,
             type: 'cita',
             time: appt.time
           });
         }
       });
 
-      // 2. Notificar Proyectos Cercanos (Próximos 7 días)
-      const months = { 'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11 };
-      
       activities.forEach(act => {
         if (act.status === 'En Proceso' || act.status === 'Pendiente') {
           try {
             // Use native Date constructor which handles ISO dates correctly
             const actDate = new Date(act.date);
             if (!isNaN(actDate) && actDate >= today && actDate <= nextWeek) {
-              notifs.push({ id: `act-${act.id}`, title: 'Proyecto Próximo', msg: `Instalación de ${act.name} programada para el ${act.date}`, type: 'proyecto' });
+              notifs.push({ id: `act-${act.id}`, title: 'Proyecto Próximo', msg: `Instalación de ${act.name} programada para el ${formatDate(act.date)}`, type: 'proyecto' });
             }
           } catch (e) { console.error("Error fecha notif", e); }
         }
@@ -269,7 +279,7 @@ const Dashboard = ({ onLogout }) => {
                       name={activity.name} 
                       email={activity.email} 
                       status={activity.status} 
-                      date={activity.date} 
+                      date={formatDate(activity.date)} 
                       amount={activity.amount}
                       onDelete={() => handleDelete(activity.id)}
                       onEdit={() => {
@@ -313,7 +323,7 @@ const Dashboard = ({ onLogout }) => {
                       <tr key={appt.id} className="hover:bg-gray-50/80">
                         <td className="px-8 py-4 font-bold text-gray-900">{appt.name}</td>
                         <td className="px-8 py-4">{appt.email}</td>
-                        <td className="px-8 py-4">{appt.date}</td>
+                        <td className="px-8 py-4">{formatDate(appt.date)}</td>
                         <td className="px-8 py-4 font-medium flex items-center gap-2"><Clock size={16} className="text-gray-400"/> {appt.time}</td>
                         <td className="px-8 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${appt.status === 'Atendida' ? 'bg-green-100 text-green-700' : appt.status === 'Cancelada' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
@@ -380,7 +390,7 @@ const Dashboard = ({ onLogout }) => {
                           name={activity.name} 
                           email={activity.email} 
                           status={activity.status} 
-                          date={activity.date} 
+                          date={formatDate(activity.date)} 
                           amount={activity.amount}
                           onDelete={() => handleDelete(activity.id)}
                           onEdit={() => {
@@ -423,7 +433,7 @@ const Dashboard = ({ onLogout }) => {
                         <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
                           <div>
                             <span className="block font-medium text-gray-600">Presupuesto: <span className="font-bold text-gray-900">{installation.amount}</span></span>
-                            <span className="block text-gray-400 text-xs mt-1">{installation.date}</span>
+                            <span className="block text-gray-400 text-xs mt-1">{formatDate(installation.date)}</span>
                           </div>
                           <button onClick={() => { setEditingClient(installation); setIsModalOpen(true); }} className="text-gray-400 hover:text-blue-600 transition-colors p-2 hover:bg-blue-50 rounded-full" title="Editar Instalación">
                             <Edit size={18} />
