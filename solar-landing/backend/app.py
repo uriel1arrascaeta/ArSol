@@ -19,15 +19,25 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- Configuración de CORS (Permisos de Conexión) ---
-# Lista de dominios que tienen permiso para conectarse a este backend.
-origins = [
-    "http://localhost:5173",
-    "https://www.arsolsolar.com",
-    "https://solar-landing-git-main-uriels-projects-78a30a8d.vercel.app",
-    "https://arsol.onrender.com"
-]
-# Es más seguro especificar los orígenes que permitir todos con `CORS(app)`.
-CORS(app, resources={r"/api/*": {"origins": origins}},
+
+
+def get_allowed_origins():
+    # Orígenes base
+    origins = [
+        "http://localhost:5173",
+        "https://www.arsolsolar.com",
+        "https://solar-landing-git-main-uriels-projects-78a30a8d.vercel.app",
+        "https://arsol.onrender.com",
+        "https://solar-landing-uriels-projects.vercel.app"
+    ]
+    # Permitir agregar orígenes dinámicos mediante variable de entorno en Render
+    env_origins = os.environ.get('ALLOWED_ORIGINS')
+    if env_origins:
+        origins.extend(env_origins.split(','))
+    return origins
+
+
+CORS(app, resources={r"/api/*": {"origins": get_allowed_origins()}},
      supports_credentials=True)
 
 # --- Configuración de Base de Datos (PostgreSQL para Render) ---
@@ -46,8 +56,19 @@ if database_url and database_url.startswith("postgres://"):
     # SQLAlchemy prefiere 'postgresql://' en lugar de 'postgres://'
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
+# Log para verificar el host en los registros de Render (ocultando la contraseña)
+if database_url:
+    masked_url = re.sub(r':\/\/(.*?):(.*?)@', r'://\1:****@', database_url)
+    print(f"INFO: Configurando conexión a base de datos: {masked_url}")
+
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Configuración para asegurar que las conexiones externas usen SSL correctamente
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "connect_args": {
+        "sslmode": "require"
+    }
+}
 
 # Configuración JWT
 app.config["JWT_SECRET_KEY"] = os.environ.get(
@@ -594,9 +615,12 @@ def analyze_bill():
     return jsonify({"success": True, "data": mock_extracted_data}), 200
 
 
+# Movido fuera de __main__ para que funcione con Gunicorn en Render
+try:
+    init_db()
+except Exception as e:
+    print(
+        f"Aviso: Error inicializando DB (puede ser normal en el despliegue): {e}")
+
 if __name__ == '__main__':
-    try:
-        init_db()
-    except Exception as e:
-        print(f"Error al inicializar la base de datos: {e}")
     app.run(debug=True, port=5000)
