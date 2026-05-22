@@ -52,8 +52,9 @@ if not database_url:
     db_name = os.environ.get('DB_NAME', 'arsol-db')
     database_url = f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}'
 
-if database_url and database_url.startswith("postgres://"):
-    # SQLAlchemy prefiere 'postgresql://' en lugar de 'postgres://'
+# Corregir el prefijo solo si es el formato antiguo 'postgres://'
+# Si ya es 'postgresql://', no lo tocamos para evitar duplicar el prefijo.
+if database_url and database_url.startswith("postgres://") and not database_url.startswith("postgresql://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 # Log para verificar el host en los registros de Render (ocultando la contraseña)
