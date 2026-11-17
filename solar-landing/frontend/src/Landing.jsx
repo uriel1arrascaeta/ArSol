@@ -7,8 +7,8 @@ import {
 import logoArsol from './logoArsol.png';
 
 const COMPANY_NAME = 'ArSol';
-const WHATSAPP_NUMBER = '5547997023788';
-const PHONE_DISPLAY = '+55 (47) 99702-3788';
+const WHATSAPP_NUMBER = '5547996663630';
+const PHONE_DISPLAY = '+55 (47) 99666-3630';
 const INSTAGRAM_URL = 'https://www.instagram.com/arsol.solar/';
 const whatsappLink = (text) =>
   `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(text)}`;
