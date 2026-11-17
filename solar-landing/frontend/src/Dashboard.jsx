@@ -44,14 +44,19 @@ const Dashboard = ({ onLogout }) => {
         authFetch(`${API_URL}/api/appointments`)
       ]);
 
-      if (resDash.ok) {
+      const dashType = resDash.headers.get("content-type");
+      if (resDash.ok && dashType && dashType.includes("application/json")) {
         const data = await resDash.json();
         if (data.stats) setStats(data.stats);
         if (data.activities) setActivities(data.activities);
+      } else if (resDash.status === 401) {
+          onLogout();
       }
       
-      if (resAppt.ok) {
-        setAppointments(await resAppt.json());
+      const apptType = resAppt.headers.get("content-type");
+      if (resAppt.ok && apptType && apptType.includes("application/json")) {
+        const apptData = await resAppt.json();
+        setAppointments(apptData);
       }
     } catch (err) {
       console.error("Error cargando dashboard:", err);

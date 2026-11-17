@@ -21,13 +21,19 @@ const AdminLogin = ({ onLogin, onBack }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        localStorage.setItem('token', data.token);
-        onLogin();
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        if (data.success) {
+          localStorage.setItem('token', data.token);
+          onLogin();
+        } else {
+          setError(data.message || 'Credenciales incorrectas');
+        }
+      } else if (response.status === 500) {
+        setError('Error interno del servidor. Revisa la configuración de la base de datos en Render.');
       } else {
-        setError(data.message || 'Credenciales incorrectas');
+        setError('Error inesperado al intentar iniciar sesión.');
       }
     } catch (err) {
       setError('Error de conexión con el servidor');

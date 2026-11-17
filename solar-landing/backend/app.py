@@ -52,25 +52,24 @@ if not database_url:
     db_name = os.environ.get('DB_NAME', 'arsol-db')
     database_url = f'postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}'
 
-# Corregir el prefijo solo si es el formato antiguo 'postgres://' y no es ya 'postgresql://'
-# Esto evita transformar incorrectamente URLs que ya tienen el prefijo correcto.
-if database_url and database_url.startswith("postgres://") and \
-   not database_url.startswith("postgresql://"):
+if database_url and database_url.startswith("postgres://"):
+    # SQLAlchemy prefiere 'postgresql://' en lugar de 'postgres://'
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-# Log para verificar el host en los registros de Render (ocultando la contraseña)
+# Log de seguridad para depuración en Render
 if database_url:
     masked_url = re.sub(r':\/\/(.*?):(.*?)@', r'://\1:****@', database_url)
-    print(f"INFO: Configurando conexión a base de datos: {masked_url}")
+    print(f"INFO: Intentando conectar a la base de datos en: {masked_url}")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# Configuración para asegurar que las conexiones externas usen SSL correctamente
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    "connect_args": {
-        "sslmode": "require"
+# Forzar SSL para conexiones externas en Render
+if os.environ.get('RENDER'):
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        "connect_args": {
+            "sslmode": "require"
+        }
     }
-}
 
 # Configuración JWT
 app.config["JWT_SECRET_KEY"] = os.environ.get(
@@ -349,6 +348,12 @@ def submit_lead():
     def clean_bill_amount(amount_str):
         if not amount_str:
             return ""
+        if "Até R$ 300" in amount_str:
+            return "300"
+        if "R$ 300 - R$ 700" in amount_str:
+            return "700"
+        if "R$ 700 - R$ 1.500" in amount_str:
+            return "1500"
         if "Menos de R$ 1.500" in amount_str:
             return "1500"
         if "R$ 1.500 - R$ 3.000" in amount_str:
@@ -617,12 +622,12 @@ def analyze_bill():
     return jsonify({"success": True, "data": mock_extracted_data}), 200
 
 
-# Movido fuera de __main__ para que funcione con Gunicorn en Render
+# Inicialización de la base de datos para entornos de producción (Gunicorn)
 try:
     init_db()
 except Exception as e:
-    print(
-        f"Aviso: Error inicializando DB (puede ser normal en el despliegue): {e}")
+    print(f"❌ ERROR DE INICIALIZACIÓN DE BASE DE DATOS: {e}")
+    print("Asegúrate de que la variable DATABASE_URL en Render sea la 'External Database URL'.")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
