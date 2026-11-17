@@ -73,7 +73,10 @@ if os.environ.get('RENDER'):
 
 # Configuración JWT
 app.config["JWT_SECRET_KEY"] = os.environ.get(
-    'JWT_SECRET_KEY', 'super-secret-change-me-in-prod')
+    'JWT_SECRET_KEY', 'dev-only-secret-no-usar-en-produccion')
+if os.environ.get('RENDER') and not os.environ.get('JWT_SECRET_KEY'):
+    print("⚠️ AVISO DE SEGURIDAD: JWT_SECRET_KEY no está configurada en Render. "
+          "Cualquiera podría falsificar sesiones de admin.")
 jwt = JWTManager(app)
 
 db = SQLAlchemy(app)
@@ -113,27 +116,21 @@ class Appointment(db.Model):
 def init_db():
     with app.app_context():
         db.create_all()
-        # Buscar el usuario administrador
-        admin = User.query.filter_by(email='admin@arsol.com').first()
-        hashed_password = generate_password_hash(
-            'admin123', method='pbkdf2:sha256')
-
-        if not admin:
-            admin = User(email='admin@arsol.com', password=hashed_password,
-                         name='Huriel', role='Super Admin')
-            db.session.add(admin)
-            print("Usuario administrador creado.")
-        elif admin.password and len(admin.password) < 100:
-            try:
-                # Si el hash guardado mide menos de 100 caracteres, es muy probable
-                # que esté truncado por el error anterior. Lo corregimos una última vez.
-                admin.password = hashed_password
-                db.session.flush()
-                db.session.commit()  # Guardamos inmediatamente si funciona
-            except Exception as e:
-                db.session.rollback()  # Importante para limpiar el estado de la transacción
-                print(
-                    f"Advertencia: No se pudo actualizar el hash del administrador (la columna en BD sigue siendo de 80 caracteres): {e}")
+        # Crear el administrador inicial solo si no existe.
+        # La contraseña se toma de ADMIN_PASSWORD (nunca escrita en el código).
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@arsol.com')
+        admin_password = os.environ.get('ADMIN_PASSWORD')
+        if not User.query.filter_by(email=admin_email).first():
+            if admin_password:
+                admin = User(email=admin_email,
+                             password=generate_password_hash(
+                                 admin_password, method='pbkdf2:sha256'),
+                             name='Huriel', role='Super Admin')
+                db.session.add(admin)
+                print("Usuario administrador creado.")
+            else:
+                print("AVISO: no existe administrador y ADMIN_PASSWORD no está "
+                      "configurada; no se creó ninguno.")
 
         # Crear actividades de ejemplo iniciales solo si la tabla está vacía
         if Activity.query.count() == 0:
@@ -156,6 +153,7 @@ def init_db():
             ]
             db.session.add_all(appointments)
 
+        db.session.commit()
         print("Base de datos inicializada correctamente.")
 
 
@@ -387,8 +385,11 @@ def submit_lead():
     # --- CONFIGURACIÓN DEL CRM I.Sales ---
     isales_url = "https://app.isales.company/formulario/cliente"
     # Obtener credenciales de variables de entorno (Configurar en Render)
-    isales_fid = os.environ.get('ISALES_FID', "UFD158TR951")
-    isales_e = os.environ.get('ISALES_E', "HJK1231ISAL567")
+    isales_fid = os.environ.get('ISALES_FID')
+    isales_e = os.environ.get('ISALES_E')
+    if not isales_fid or not isales_e:
+        print("AVISO: ISALES_FID/ISALES_E no configuradas; el lead no se envió al CRM.")
+        return jsonify({"success": True}), 200
 
     try:
         # Cambiamos a un payload plano para enviar como application/x-www-form-urlencoded
@@ -422,6 +423,7 @@ def submit_lead():
 
 
 @app.route('/api/register', methods=['POST'])
+@jwt_required()
 def register():
     data = request.json
     email = data.get('email')
