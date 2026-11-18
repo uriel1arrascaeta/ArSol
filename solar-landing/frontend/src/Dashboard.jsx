@@ -7,6 +7,7 @@ import ClientModal from './components/ClientModal';
 import AppointmentModal from './components/AppointmentModal';
 import ProjectSection from './components/ProjectSection';
 import PasswordChangeForm from './components/PasswordChangeForm';
+import AnalyticsSection from './components/AnalyticsSection';
 
 const Dashboard = ({ onLogout }) => {
   const [stats, setStats] = useState({
@@ -23,7 +24,7 @@ const Dashboard = ({ onLogout }) => {
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
   const [dismissedNotifs, setDismissedNotifs] = useState([]);
-  const [activeTab, setActiveTab] = useState('resumen');
+  const [activeTab, setActiveTab] = useState('analitica');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -226,6 +227,9 @@ const Dashboard = ({ onLogout }) => {
         />
 
         <div className="p-8 max-w-7xl mx-auto">
+          {/* VISTA: ANALÍTICA DE LA LANDING */}
+          {activeTab === 'analitica' && <AnalyticsSection onUnauthorized={onLogout} />}
+
           {/* VISTA: RESUMEN */}
           {activeTab === 'resumen' && (
             <>

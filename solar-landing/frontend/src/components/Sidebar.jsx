@@ -1,9 +1,9 @@
 import React from 'react';
-import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, Calendar, Calculator } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Sun, Zap, Calendar, Calculator, BarChart3 } from 'lucide-react';
 
 const NavItem = ({ icon, label, active, onClick }) => (
-  <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${active ? 'bg-yellow-50 text-yellow-700 font-bold shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
-    <div className={`transition-transform group-hover:scale-110 ${active ? 'text-yellow-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
+  <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${active ? 'bg-[#FF7A00]/10 text-[#CC6200] font-bold shadow-sm' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}>
+    <div className={`transition-transform group-hover:scale-110 ${active ? 'text-[#E66E00]' : 'text-gray-400 group-hover:text-gray-600'}`}>
       {icon}
     </div>
     <span>{label}</span>
@@ -21,13 +21,14 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout, isOpen, onClose }) => {
 
       <aside className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-30 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       <div className="p-6 flex items-center gap-2 border-b border-gray-100">
-        <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center shadow-md">
+        <div className="w-8 h-8 bg-gradient-to-br from-[#FF7A00] to-[#E66E00] rounded-lg flex items-center justify-center shadow-md">
           <Sun className="h-5 w-5 text-white" />
         </div>
-        <span className="text-xl font-extrabold text-gray-900 tracking-tight">ArSol Panel</span>
+        <span className="text-xl font-extrabold text-gray-900 tracking-tight">ArSol <span className="text-[#FF7A00]">Central</span></span>
       </div>
 
       <nav className="flex-1 px-4 space-y-2 mt-6">
+        <NavItem icon={<BarChart3 size={20} />} label="Analítica" active={activeTab === 'analitica'} onClick={() => { setActiveTab('analitica'); onClose(); }} />
         <NavItem icon={<LayoutDashboard size={20} />} label="Resumen" active={activeTab === 'resumen'} onClick={() => { setActiveTab('resumen'); onClose(); }} />
         <NavItem icon={<Users size={20} />} label="Clientes" active={activeTab === 'clientes'} onClick={() => { setActiveTab('clientes'); onClose(); }} />
         <NavItem icon={<Zap size={20} />} label="Instalaciones" active={activeTab === 'instalaciones'} onClick={() => { setActiveTab('instalaciones'); onClose(); }} />

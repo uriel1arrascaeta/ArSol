@@ -110,6 +110,24 @@ class Appointment(db.Model):
     time = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), default="Pendiente")
 
+
+class PageEvent(db.Model):
+    """Evento anónimo de la landing (visita, clic, sección vista...).
+    No guarda IP ni datos personales: solo IDs aleatorios generados en el navegador."""
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, nullable=False,
+                           default=datetime.utcnow, index=True)
+    visitor_id = db.Column(db.String(40), nullable=False, index=True)
+    session_id = db.Column(db.String(40), nullable=False, index=True)
+    # pageview | click | section_view | simulator
+    event = db.Column(db.String(20), nullable=False)
+    # orcamento | whatsapp | instagram | telefone | nav | other
+    category = db.Column(db.String(20))
+    label = db.Column(db.String(80))
+    section = db.Column(db.String(40))
+    source = db.Column(db.String(60))
+    device = db.Column(db.String(20))
+
 # --- Inicialización de Datos ---
 
 
@@ -418,6 +436,207 @@ def submit_lead():
         print(f"Error enviando a CRM: {e}")
 
     return jsonify({"success": True}), 200
+
+# --- Analítica de la landing ---
+
+TRACK_EVENTS = {'pageview', 'click', 'section_view', 'simulator'}
+TRACK_CATEGORIES = {'orcamento', 'whatsapp',
+                    'instagram', 'telefone', 'nav', 'other'}
+BOT_PATTERN = re.compile(
+    r'bot|crawl|spider|slurp|preview|lighthouse|headless', re.I)
+BR_OFFSET = timedelta(hours=-3)  # Brasil (sin horario de verano desde 2019)
+MAX_EVENTS_PER_SESSION = 300
+
+
+def _clip(value, size):
+    if value is None:
+        return None
+    return str(value).strip()[:size] or None
+
+
+@app.route('/api/track', methods=['POST'])
+def track_event():
+    """Endpoint público: la landing envía aquí los eventos (vía sendBeacon)."""
+    if BOT_PATTERN.search(request.headers.get('User-Agent', '')):
+        return '', 204
+    try:
+        data = json.loads(request.get_data(as_text=True) or '{}')
+    except ValueError:
+        return '', 400
+    if not isinstance(data, dict):
+        return '', 400
+
+    event = data.get('event')
+    visitor_id = _clip(data.get('visitor_id'), 40)
+    session_id = _clip(data.get('session_id'), 40)
+    if event not in TRACK_EVENTS or not visitor_id or not session_id:
+        return '', 400
+
+    category = data.get('category')
+    if category not in TRACK_CATEGORIES:
+        category = None
+
+    try:
+        if PageEvent.query.filter_by(session_id=session_id).count() >= MAX_EVENTS_PER_SESSION:
+            return '', 204
+        db.session.add(PageEvent(
+            visitor_id=visitor_id,
+            session_id=session_id,
+            event=event,
+            category=category,
+            label=_clip(data.get('label'), 80),
+            section=_clip(data.get('section'), 40),
+            source=_clip(data.get('source'), 60),
+            device=_clip(data.get('device'), 20),
+        ))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error guardando evento: {e}")
+        return '', 500
+    return '', 204
+
+
+def _is_lead(ev):
+    return ev.event == 'click' and ev.category in ('orcamento', 'whatsapp')
+
+
+def _summarize(events):
+    sessions = {}
+    for e in events:
+        s = sessions.setdefault(e.session_id, {
+            'visitor': e.visitor_id, 'events': [], 'source': None, 'device': None})
+        s['events'].append(e)
+        s['source'] = s['source'] or e.source
+        s['device'] = s['device'] or e.device
+
+    lead_sessions = sum(1 for s in sessions.values()
+                        if any(_is_lead(ev) for ev in s['events']))
+    totals = {
+        'visitors': len({e.visitor_id for e in events}),
+        'sessions': len(sessions),
+        'pageviews': sum(1 for e in events if e.event == 'pageview'),
+        'orcamento_clicks': sum(1 for e in events if e.event == 'click' and e.category == 'orcamento'),
+        'whatsapp_clicks': sum(1 for e in events if e.event == 'click' and e.category == 'whatsapp'),
+        'lead_sessions': lead_sessions,
+        'conversion_rate': round(lead_sessions / len(sessions) * 100, 1) if sessions else 0,
+    }
+    return totals, sessions
+
+
+@app.route('/api/analytics', methods=['GET'])
+@jwt_required()
+def get_analytics():
+    try:
+        days = int(request.args.get('days', 30))
+    except ValueError:
+        days = 30
+    days = max(1, min(days, 365))
+
+    now = datetime.utcnow()
+    # Inicio del período alineado a la medianoche de Brasil
+    today_br = (now + BR_OFFSET).date()
+    start_br = today_br - timedelta(days=days - 1)
+    start = datetime.combine(start_br, datetime.min.time()) - BR_OFFSET
+    prev_start = start - timedelta(days=days)
+
+    events = PageEvent.query.filter(PageEvent.created_at >= start).order_by(
+        PageEvent.created_at).all()
+    prev_events = PageEvent.query.filter(
+        PageEvent.created_at >= prev_start, PageEvent.created_at < start).all()
+
+    totals, sessions = _summarize(events)
+    prev_totals, _ = _summarize(prev_events)
+
+    # Serie diaria (hora de Brasil)
+    daily = {start_br + timedelta(days=i): {'visitors': set(), 'orcamento': 0, 'whatsapp': 0}
+             for i in range(days)}
+    for e in events:
+        d = (e.created_at + BR_OFFSET).date()
+        if d in daily:
+            daily[d]['visitors'].add(e.visitor_id)
+            if _is_lead(e):
+                daily[d][e.category] += 1
+    daily_list = [{'date': d.isoformat(), 'visitors': len(v['visitors']),
+                   'orcamento': v['orcamento'], 'whatsapp': v['whatsapp']}
+                  for d, v in sorted(daily.items())]
+
+    # Clics más frecuentes
+    clicks = {}
+    for e in events:
+        if e.event == 'click':
+            key = (e.category or 'other', e.label or '(sin texto)',
+                   e.section or '-')
+            clicks[key] = clicks.get(key, 0) + 1
+    top_clicks = [{'category': k[0], 'label': k[1], 'section': k[2], 'count': c}
+                  for k, c in sorted(clicks.items(), key=lambda x: -x[1])[:12]]
+
+    def count_by(field, empty):
+        out = {}
+        for s in sessions.values():
+            key = s[field] or empty
+            out[key] = out.get(key, 0) + 1
+        return [{'name': k, 'sessions': v} for k, v in sorted(out.items(), key=lambda x: -x[1])]
+
+    section_counts = {}
+    for s in sessions.values():
+        for sec in {ev.section for ev in s['events'] if ev.event == 'section_view' and ev.section}:
+            section_counts[sec] = section_counts.get(sec, 0) + 1
+
+    def sessions_with(pred):
+        return sum(1 for s in sessions.values() if any(pred(ev) for ev in s['events']))
+
+    funnel = [
+        {'step': 'Entraron a la página', 'sessions': totals['sessions']},
+        {'step': 'Llegaron al simulador', 'sessions': sessions_with(
+            lambda ev: ev.event == 'section_view' and ev.section == 'calculadora')},
+        {'step': 'Usaron el simulador', 'sessions': sessions_with(
+            lambda ev: ev.event == 'simulator')},
+        {'step': 'Clic en orçamento o WhatsApp',
+            'sessions': totals['lead_sessions']},
+    ]
+
+    # Visitantes que ya habían venido antes del período
+    visitor_ids = {s['visitor'] for s in sessions.values()}
+    returning_ids = set()
+    if visitor_ids:
+        returning_ids = {r[0] for r in db.session.query(PageEvent.visitor_id).filter(
+            PageEvent.visitor_id.in_(visitor_ids), PageEvent.created_at < start).distinct()}
+
+    recent = sorted(sessions.items(),
+                    key=lambda kv: kv[1]['events'][-1].created_at, reverse=True)[:30]
+    recent_sessions = []
+    for sid, s in recent:
+        first = s['events'][0].created_at
+        earlier_session = s['visitor'] in returning_ids or any(
+            o['visitor'] == s['visitor'] and o['events'][0].created_at < first
+            for o in sessions.values())
+        recent_sessions.append({
+            'session_id': sid,
+            'started_at': first.isoformat() + 'Z',
+            'source': s['source'] or 'Directo',
+            'device': s['device'] or 'Desconocido',
+            'returning': earlier_session,
+            'converted': any(_is_lead(ev) for ev in s['events']),
+            'sections': [ev.section for ev in s['events'] if ev.event == 'section_view'],
+            'events': [{'at': ev.created_at.isoformat() + 'Z', 'event': ev.event, 'category': ev.category,
+                        'label': ev.label, 'section': ev.section}
+                       for ev in s['events'] if ev.event != 'section_view'][:40],
+        })
+
+    return jsonify({
+        'days': days,
+        'totals': totals,
+        'previous': prev_totals,
+        'daily': daily_list,
+        'top_clicks': top_clicks,
+        'sources': count_by('source', 'Directo'),
+        'devices': count_by('device', 'Desconocido'),
+        'sections': [{'section': k, 'sessions': v} for k, v in section_counts.items()],
+        'funnel': funnel,
+        'recent_sessions': recent_sessions,
+    }), 200
+
 
 # --- Endpoint para registrar nuevos administradores ---
 

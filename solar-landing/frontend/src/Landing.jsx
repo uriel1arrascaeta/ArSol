@@ -6,6 +6,7 @@ import {
   CalendarClock, Scale, MapPin,
 } from 'lucide-react';
 import logoArsol from './logoArsol.png';
+import { initTracking, trackOnce } from './analytics';
 
 const COMPANY_NAME = 'ArSol';
 const WHATSAPP_NUMBER = '5547996663630';
@@ -191,6 +192,8 @@ const Landing = ({ onAdminClick }) => {
   const [scrolled, setScrolled] = useState(false);
   const [bill, setBill] = useState(500);
 
+  useEffect(() => initTracking(), []);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
@@ -225,7 +228,7 @@ const Landing = ({ onAdminClick }) => {
               <PrimaryButton href={ORCAMENTO_URL} {...ext} className="px-6 py-2.5 text-sm">
                 <Zap className="w-4 h-4 fill-current" /> Orçamento grátis
               </PrimaryButton>
-              <button onClick={onAdminClick} className="text-gray-300 hover:text-gray-700 transition-colors" title="Acesso Admin" aria-label="Acesso Admin">
+              <button data-no-track onClick={onAdminClick} className="text-gray-300 hover:text-gray-700 transition-colors" title="Acesso Admin" aria-label="Acesso Admin">
                 <Lock className="w-4 h-4" />
               </button>
             </div>
@@ -247,7 +250,7 @@ const Landing = ({ onAdminClick }) => {
                 <a href={INSTAGRAM_URL} {...ext} className="text-gray-600 hover:text-[#E1306C] flex items-center gap-2 font-medium"><Instagram size={20} /> Instagram</a>
                 <a href={WHATSAPP_URL} {...ext} className="text-gray-600 hover:text-green-600 flex items-center gap-2 font-medium"><WhatsIcon className="w-5 h-5" /> WhatsApp</a>
               </div>
-              <button onClick={() => { toggleMenu(); onAdminClick(); }} className="block w-full text-center px-4 pt-4 text-sm text-gray-300">Acesso Admin</button>
+              <button data-no-track onClick={() => { toggleMenu(); onAdminClick(); }} className="block w-full text-center px-4 pt-4 text-sm text-gray-300">Acesso Admin</button>
             </div>
           </div>
         )}
@@ -358,7 +361,7 @@ const Landing = ({ onAdminClick }) => {
       </section>
 
       {/* --- COMO A ENERGIA SOLAR FUNCIONA --- */}
-      <section className="py-24 md:py-32 bg-ink text-white relative overflow-hidden">
+      <section id="entenda" className="py-24 md:py-32 bg-ink text-white relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[50rem] h-[20rem] bg-brand/15 blur-[120px]" aria-hidden="true" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionTitle eyebrow="Entenda" title="Como a energia solar funciona" dark>
@@ -431,7 +434,11 @@ const Landing = ({ onAdminClick }) => {
               <p className="text-5xl md:text-6xl font-extrabold text-ink mb-8 tabular-nums tracking-tight">{brl(bill)}</p>
               <input
                 id="bill" type="range" min="150" max="10000" step="50" value={bill}
-                onChange={(e) => setBill(Number(e.target.value))}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  setBill(value);
+                  trackOnce('simulator', 'simulator', { label: brl(value) });
+                }}
                 className="range-brand w-full cursor-pointer"
                 style={{ '--pct': `${billPct}%` }}
               />
@@ -512,7 +519,7 @@ const Landing = ({ onAdminClick }) => {
       </section>
 
       {/* --- POR QUE AGORA --- */}
-      <section className="py-24 md:py-32 bg-white">
+      <section id="por-que-agora" className="py-24 md:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-5 gap-12 items-start">
           <div className="lg:col-span-2 lg:sticky lg:top-28">
             <SectionTitle eyebrow="Por que agora" title="Esperar também custa caro" align="left">
