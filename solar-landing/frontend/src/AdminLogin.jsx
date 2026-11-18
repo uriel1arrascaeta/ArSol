@@ -26,16 +26,19 @@ const AdminLogin = ({ onLogin, onBack }) => {
         const data = await response.json();
         if (data.success) {
           localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user || {}));
           onLogin();
         } else {
           setError(data.message || 'Credenciales incorrectas');
         }
+      } else if (response.status === 401) {
+        setError('Email o contraseña incorrectos.');
       } else if (response.status === 500) {
         setError('Error interno del servidor. Revisa la configuración de la base de datos en Render.');
       } else {
         setError('Error inesperado al intentar iniciar sesión.');
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión con el servidor');
     } finally {
       setIsLoading(false);

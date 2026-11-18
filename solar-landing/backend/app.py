@@ -136,9 +136,9 @@ def init_db():
         db.create_all()
         # Crear el administrador inicial solo si no existe.
         # La contraseña se toma de ADMIN_PASSWORD (nunca escrita en el código).
-        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@arsol.com')
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@arsol.com').strip().lower()
         admin_password = os.environ.get('ADMIN_PASSWORD')
-        if not User.query.filter_by(email=admin_email).first():
+        if not User.query.filter(db.func.lower(User.email) == admin_email).first():
             if admin_password:
                 admin = User(email=admin_email,
                              password=generate_password_hash(
@@ -189,6 +189,15 @@ def home():
     return "Backend de ArSol funcionando correctamente ☀️"
 
 
+EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+MIN_PASSWORD = 8
+
+
+def _find_user(email):
+    """Busca un usuario por email sin distinguir mayúsculas."""
+    return User.query.filter(db.func.lower(User.email) == (email or '').strip().lower()).first()
+
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -196,20 +205,19 @@ def login():
     password = data.get('password')
 
     # Buscar usuario en la base de datos
-    user = User.query.filter_by(email=email).first()
+    user = _find_user(email)
 
-    if user and check_password_hash(user.password, password):
+    if user and check_password_hash(user.password, password or ''):
         access_token = create_access_token(identity=user.email)
         return jsonify({
             "success": True,
             "token": access_token,
-            "user": {"name": user.name, "role": user.role},
+            "user": {"name": user.name, "role": user.role, "email": user.email},
             "message": "Bienvenido al sistema"
         }), 200
     else:
-        # Mensaje más descriptivo para depuración
-        msg = "Contraseña incorrecta" if user else "Usuario no encontrado"
-        return jsonify({"success": False, "message": msg}), 401
+        # Mensaje genérico: no revelar qué emails existen
+        return jsonify({"success": False, "message": "Email o contraseña incorrectos"}), 401
 
 
 @app.route('/api/dashboard', methods=['GET'])
@@ -644,20 +652,50 @@ def get_analytics():
 @app.route('/api/register', methods=['POST'])
 @jwt_required()
 def register():
-    data = request.json
-    email = data.get('email')
-    password = data.get('password')
-    name = data.get('name', 'Admin User')
+    data = request.json or {}
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+    name = (data.get('name') or '').strip() or 'Admin'
 
-    if User.query.filter_by(email=email).first():
-        return jsonify({"success": False, "message": "El usuario ya existe"}), 400
+    if not EMAIL_RE.match(email):
+        return jsonify({"success": False, "message": "El email no es válido"}), 400
+    if len(password) < MIN_PASSWORD:
+        return jsonify({"success": False, "message": f"La contraseña debe tener al menos {MIN_PASSWORD} caracteres"}), 400
+    if _find_user(email):
+        return jsonify({"success": False, "message": "Ya existe un usuario con ese email"}), 400
 
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     new_user = User(email=email, password=hashed_password,
-                    name=name, role='Admin')
+                    name=name[:80], role='Admin')
     db.session.add(new_user)
     db.session.commit()
     return jsonify({"success": True, "message": "Usuario creado con éxito"}), 201
+
+
+@app.route('/api/users', methods=['GET'])
+@jwt_required()
+def list_users():
+    me = (get_jwt_identity() or '').lower()
+    users = User.query.order_by(User.id).all()
+    return jsonify([{
+        "id": u.id, "email": u.email, "name": u.name, "role": u.role,
+        "is_me": u.email.lower() == me,
+    } for u in users]), 200
+
+
+@app.route('/api/users/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(id):
+    user = db.session.get(User, id)
+    if not user:
+        return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+    if user.email.lower() == (get_jwt_identity() or '').lower():
+        return jsonify({"success": False, "message": "No puedes borrar tu propio usuario"}), 400
+    if User.query.count() <= 1:
+        return jsonify({"success": False, "message": "Debe quedar al menos un usuario"}), 400
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Usuario eliminado"}), 200
 
 # --- Rutas de Citas (Appointments) ---
 
@@ -731,10 +769,12 @@ def update_password():
     current_password = data.get('currentPassword')
     new_password = data.get('newPassword')
 
-    user = User.query.filter_by(email=current_user_email).first()
+    user = _find_user(current_user_email)
 
     if not user:
         return jsonify({"success": False, "message": "Usuario no encontrado"}), 404
+    if len(new_password or '') < MIN_PASSWORD:
+        return jsonify({"success": False, "message": f"La nueva contraseña debe tener al menos {MIN_PASSWORD} caracteres"}), 400
 
     if not check_password_hash(user.password, current_password):
         return jsonify({"success": False, "message": "La contraseña actual es incorrecta"}), 400

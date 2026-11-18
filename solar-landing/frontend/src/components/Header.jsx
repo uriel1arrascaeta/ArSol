@@ -1,7 +1,13 @@
 import React from 'react';
 import { Bell, Calendar, Zap, X, Menu } from 'lucide-react';
 
+const getCurrentUser = () => {
+  try { return JSON.parse(localStorage.getItem('user')) || {}; } catch { return {}; }
+};
+
 const Header = ({ showNotifications, setShowNotifications, notifications, handleDismiss, handleDismissAll, toggleSidebar }) => {
+  const user = getCurrentUser();
+  const name = user.name || 'Admin';
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 md:px-8 py-4 flex justify-between items-center sticky top-0 z-20">
       <div className="flex items-center gap-4">
@@ -9,7 +15,7 @@ const Header = ({ showNotifications, setShowNotifications, notifications, handle
           <Menu size={24} />
         </button>
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Hola, Admin 👋</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Hola, {name.split(' ')[0]} 👋</h1>
           <p className="text-xs md:text-sm text-gray-500">Aquí tienes lo que está pasando hoy.</p>
         </div>
       </div>
@@ -65,11 +71,11 @@ const Header = ({ showNotifications, setShowNotifications, notifications, handle
         </div>
         <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-bold text-gray-900">Huriel</p>
-            <p className="text-xs text-gray-500">Super Admin</p>
+            <p className="text-sm font-bold text-gray-900">{name}</p>
+            <p className="text-xs text-gray-500">{user.email || user.role || 'Admin'}</p>
           </div>
           <div className="w-10 h-10 bg-gradient-to-tr from-gray-200 to-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold border-2 border-white shadow-sm">
-            H
+            {name.charAt(0).toUpperCase()}
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import AppointmentModal from './components/AppointmentModal';
 import ProjectSection from './components/ProjectSection';
 import PasswordChangeForm from './components/PasswordChangeForm';
 import AnalyticsSection from './components/AnalyticsSection';
+import UsersManager from './components/UsersManager';
 
 const Dashboard = ({ onLogout }) => {
   const [stats, setStats] = useState({
@@ -475,15 +476,25 @@ const Dashboard = ({ onLogout }) => {
             <div>
               <div className="mb-8">
                 <h3 className="font-bold text-2xl text-gray-900">Configuración de la Cuenta</h3>
-                <p className="text-gray-500 text-sm">Administra tus datos de acceso.</p>
+                <p className="text-gray-500 text-sm">Administra tus datos de acceso y quién puede entrar a ArSol Central.</p>
               </div>
 
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-lg">
+              <div className="grid lg:grid-cols-2 gap-6 items-start">
+              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h4 className="font-bold text-lg text-gray-900 flex items-center gap-2 mb-6">
                   <KeyRound className="text-[#FF7A00]" />
                   Cambiar Contraseña
                 </h4>
                 <PasswordChangeForm />
+              </div>
+
+              <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h4 className="font-bold text-lg text-gray-900 flex items-center gap-2 mb-6">
+                  <Users className="text-[#FF7A00]" />
+                  Usuarios
+                </h4>
+                <UsersManager />
+              </div>
               </div>
             </div>
           )}

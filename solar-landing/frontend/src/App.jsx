@@ -17,6 +17,7 @@ const App = () => {
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setCurrentView('landing');
   };
 
